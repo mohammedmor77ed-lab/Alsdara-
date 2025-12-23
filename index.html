@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>صيدلية الصدارة - النظام السريع V7.2</title>
+    <title>صيدلية الصدارة - النظام السريع V7.4</title>
     
-    <!-- تحسين تحميل الموارد -->
+    <!-- استخدام CDN لتحسين السرعة -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         * { 
@@ -35,6 +35,8 @@
             .print-table { border-collapse: collapse; width: 100%; font-size: 11px; }
             .print-table th, .print-table td { border: 1px solid #ddd; padding: 5px; text-align: right; }
             .print-section { break-inside: avoid; margin-bottom: 15px; }
+            .print-images { page-break-inside: avoid; margin-top: 20px; }
+            .print-image { max-width: 100%; height: auto; margin-bottom: 10px; border: 1px solid #ddd; }
         }
         
         .print-only { display: none; }
@@ -67,19 +69,22 @@
             border-color: #cbd5e1;
         }
         
-        /* النوافذ المنبثقة - محسنة للأداء */
+        /* النوافذ المنبثقة */
         .modal {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-            transition: opacity 0.2s ease;
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
             z-index: 9999;
+            justify-content: center;
+            align-items: center;
         }
         
         .modal.active {
-            opacity: 1;
-            visibility: visible;
-            pointer-events: auto;
+            display: flex;
         }
         
         /* تحسينات الأداء */
@@ -110,9 +115,10 @@
                 margin-top: 8px;
             }
             body { font-size: 13px; }
+            .image-preview { max-width: 100px; max-height: 100px; }
         }
         
-        /* تخصيص ألوان لـ Tailwind */
+        /* تخصيص ألوان */
         .bg-primary { background-color: #0d9488; }
         .bg-primary-dark { background-color: #0f766e; }
         .text-primary { color: #0d9488; }
@@ -124,7 +130,7 @@
             overflow-y: auto;
         }
         
-        /* تحسين الحقول - بحجم طبيعي */
+        /* تحسين الحقول */
         .input-field {
             padding: 8px 12px;
             border: 1px solid #d1d5db;
@@ -150,12 +156,6 @@
             cursor: pointer;
         }
         
-        .select-field:focus {
-            outline: none;
-            border-color: #0d9488;
-            box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.1);
-        }
-        
         /* تحسين الأزرار */
         .btn {
             transition: all 0.2s ease;
@@ -171,11 +171,6 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 13px;
-        }
-        
         /* ألوان للأنواع المختلفة */
         .sale-bg { background-color: #f0fdf4; border-color: #dcfce7; }
         .sale-text { color: #166534; }
@@ -188,38 +183,11 @@
         .shortage-bg { background-color: #fef2f2; border-color: #fee2e2; }
         .shortage-text { color: #dc2626; }
         
-        /* تحسين شريط التمرير */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: #a1a1a1;
-        }
-        
         /* تحسينات النصوص */
         .text-small { font-size: 12px; }
         .text-medium { font-size: 14px; }
         .text-large { font-size: 16px; }
         .text-xlarge { font-size: 18px; }
-        
-        /* فاصل بصري */
-        .divider {
-            height: 1px;
-            background: linear-gradient(to right, transparent, #e2e8f0, transparent);
-            margin: 15px 0;
-        }
         
         /* تحسين التبويبات */
         .tab-container {
@@ -260,51 +228,187 @@
             border-bottom: 1px solid #e2e8f0;
         }
         
-        /* تحسين التقرير */
-        .report-section {
-            background: white;
+        /* أيقونات الطوارئ */
+        .icon-fallback {
+            font-size: 20px;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        
+        /* تحسينات للصور */
+        .image-upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f9fafb;
+        }
+        
+        .image-upload-area:hover {
+            border-color: #0d9488;
+            background: #f0f9ff;
+        }
+        
+        .image-upload-area.dragover {
+            border-color: #0d9488;
+            background: #e0f2fe;
+        }
+        
+        .image-preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .image-preview {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 2px solid #e5e7eb;
+            transition: transform 0.2s ease;
+        }
+        
+        .image-preview:hover {
+            transform: scale(1.05);
+            border-color: #0d9488;
+        }
+        
+        .image-item {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .image-remove {
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .image-remove:hover {
+            background: #dc2626;
+        }
+        
+        /* تحسينات للإدارة */
+        .image-manager-section {
+            background: #f8fafc;
             border-radius: 8px;
             padding: 15px;
-            margin-bottom: 15px;
-            border: 1px solid #e2e8f0;
+            margin-top: 15px;
+        }
+        
+        /* تنسيقات التقارير */
+        .report-section {
+            margin-bottom: 20px;
         }
         
         .report-section-title {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
-            color: #334155;
-            margin-bottom: 12px;
+            color: #0d9488;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #e2e8f0;
             display: flex;
             align-items: center;
-            gap: 8px;
         }
         
-        /* تحسين الحاوية الرئيسية */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
+        .transaction-date {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            font-weight: 500;
         }
         
-        /* تحسين الهيدر */
-        header {
-            font-size: 14px;
+        /* نافذة اختيار التاريخ */
+        .date-picker-modal {
+            z-index: 10000;
         }
         
-        /* تحسين الفوتر */
-        .footer {
-            font-size: 13px;
+        .date-picker-header {
+            background: #0d9488;
+            color: white;
+            padding: 15px;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .date-picker-body {
+            background: white;
+            padding: 20px;
+            border-radius: 0 0 8px 8px;
         }
     </style>
 </head>
 <body class="min-h-screen text-gray-800">
 
-    <!-- النوافذ المنبثقة -->
-    <div id="transferModal" class="modal fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-lg w-full max-w-md">
+    <!-- نافذة تحميل الصور -->
+    <div id="uploadModal" class="modal">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl m-4 max-h-[90vh] overflow-auto">
+            <div class="bg-primary p-4 flex justify-between items-center text-white rounded-t-lg sticky top-0 z-10">
+                <h3 class="font-semibold text-medium">إدارة الصور المرفوعة</h3>
+                <button onclick="hideModal('uploadModal')" class="hover:bg-primary-dark p-2 rounded transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-5">
+                <!-- منطقة رفع الصور -->
+                <div class="mb-6">
+                    <h4 class="font-medium text-medium mb-3 text-gray-700">رفع صور جديدة</h4>
+                    <div id="imageUploadArea" class="image-upload-area" onclick="document.getElementById('imageInput').click()">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                        <p class="text-gray-600 mb-2">انقر أو اسحب الصور هنا</p>
+                        <p class="text-gray-500 text-small">يمكنك رفع صور JPG, PNG, GIF (الحد الأقصى 5MB لكل صورة)</p>
+                        <input type="file" id="imageInput" accept="image/*" multiple style="display: none;" onchange="handleImageUpload(event)">
+                    </div>
+                    
+                    <!-- معاينة الصور المرفوعة حديثًا -->
+                    <div id="imagePreviews" class="image-preview-container mt-4"></div>
+                </div>
+                
+                <!-- عرض الصور المحفوظة -->
+                <div class="image-manager-section">
+                    <h4 class="font-medium text-medium mb-3 text-gray-700">الصور المرفوعة</h4>
+                    <div id="savedImages" class="image-preview-container">
+                        <!-- سيتم ملؤها بواسطة JavaScript -->
+                    </div>
+                    <div id="noImagesMessage" class="text-center py-8 text-gray-500 hidden">
+                        <i class="fas fa-images text-4xl mb-3"></i>
+                        <p>لا توجد صور مرفوعة بعد</p>
+                    </div>
+                </div>
+                
+                <!-- زر الإغلاق -->
+                <button onclick="hideModal('uploadModal')" class="w-full mt-6 p-3 bg-gray-800 text-white rounded font-medium btn text-medium">
+                    <i class="fas fa-check mr-2"></i>تم
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة التحويل -->
+    <div id="transferModal" class="modal">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md m-4">
             <div class="bg-primary p-4 flex justify-between items-center text-white rounded-t-lg">
                 <h3 class="font-semibold text-medium">تحويل بين الصناديق</h3>
                 <button onclick="hideModal('transferModal')" class="hover:bg-primary-dark p-2 rounded transition">
-                    <i data-lucide="x" class="w-4 h-4"></i>
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="p-5 space-y-4">
@@ -326,7 +430,7 @@
                 </div>
                 <div>
                     <label class="text-gray-600 mb-1 block font-medium">المبلغ</label>
-                    <input id="tAmount" type="number" step="0.01" class="input-field w-full font-semibold" placeholder="0.00" autofocus>
+                    <input id="tAmount" type="number" step="0.01" class="input-field w-full font-semibold" placeholder="0.00">
                 </div>
                 <button onclick="executeTransfer()" class="w-full p-3 bg-primary text-white rounded font-medium btn text-medium">
                     تأكيد التحويل
@@ -335,33 +439,42 @@
         </div>
     </div>
 
-    <div id="calculatorModal" class="modal fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-lg w-full max-w-sm">
-            <div class="bg-gray-800 p-4 flex justify-between items-center text-white rounded-t-lg">
-                <h3 class="font-semibold text-medium">آلة حاسبة</h3>
-                <button onclick="hideModal('calculatorModal')" class="hover:bg-gray-700 p-2 rounded transition">
-                    <i data-lucide="x" class="w-4 h-4"></i>
+    <!-- نافذة اختيار تاريخ التقرير -->
+    <div id="reportDateModal" class="modal date-picker-modal">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md m-4">
+            <div class="date-picker-header flex justify-between items-center">
+                <h3 class="font-semibold text-medium">اختيار تاريخ التقرير</h3>
+                <button onclick="hideModal('reportDateModal')" class="hover:bg-teal-800 p-2 rounded transition">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="p-4 bg-gray-100 text-right text-xl font-mono font-semibold border-b" dir="ltr" id="calcDisplay">0</div>
-            <div class="grid grid-cols-4 gap-2 p-4">
-                <button onclick="calcInput('7')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn text-medium">7</button>
-                <button onclick="calcInput('8')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn text-medium">8</button>
-                <button onclick="calcInput('9')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn text-medium">9</button>
-                <button onclick="calcInput('/')" class="p-3 bg-orange-100 rounded font-medium hover:bg-orange-200 btn text-medium">÷</button>
-                <button onclick="calcInput('4')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn text-medium">4</button>
-                <button onclick="calcInput('5')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn text-medium">5</button>
-                <button onclick="calcInput('6')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn text-medium">6</button>
-                <button onclick="calcInput('*')" class="p-3 bg-orange-100 rounded font-medium hover:bg-orange-200 btn text-medium">×</button>
-                <button onclick="calcInput('1')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn text-medium">1</button>
-                <button onclick="calcInput('2')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn text-medium">2</button>
-                <button onclick="calcInput('3')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn text-medium">3</button>
-                <button onclick="calcInput('-')" class="p-3 bg-orange-100 rounded font-medium hover:bg-orange-200 btn text-medium">-</button>
-                <button onclick="calcClear()" class="p-3 bg-red-100 rounded font-medium hover:bg-red-200 btn text-medium">C</button>
-                <button onclick="calcInput('0')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn text-medium">0</button>
-                <button onclick="calcInput('.')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn text-medium">.</button>
-                <button onclick="calcInput('+')" class="p-3 bg-orange-100 rounded font-medium hover:bg-orange-200 btn text-medium">+</button>
-                <button onclick="calcCalculate()" class="p-3 col-span-4 bg-primary text-white rounded font-medium btn text-medium">=</button>
+            <div class="date-picker-body space-y-4">
+                <div>
+                    <label class="text-gray-600 mb-1 block font-medium">تاريخ التقرير</label>
+                    <input type="date" id="reportDateSelect" class="input-field w-full text-center text-large font-semibold">
+                </div>
+                
+                <div class="bg-blue-50 p-3 rounded">
+                    <p class="text-small text-gray-600 mb-2">
+                        <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                        سيتم عرض التقرير الشامل للتاريخ المحدد
+                    </p>
+                    <div class="flex gap-2">
+                        <button onclick="generateReportForSelectedDate()" class="flex-1 p-3 bg-primary text-white rounded font-medium btn">
+                            <i class="fas fa-eye mr-2"></i>عرض التقرير
+                        </button>
+                        <button onclick="printReportForSelectedDate()" class="flex-1 p-3 bg-gray-800 text-white rounded font-medium btn">
+                            <i class="fas fa-print mr-2"></i>طباعة مباشرة
+                        </button>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="text-gray-600 mb-2 block font-medium">التقارير المحفوظة حسب التاريخ</label>
+                    <div id="savedReportDates" class="space-y-2 max-h-40 overflow-y-auto">
+                        <!-- سيتم ملؤها بالتواريخ المحفوظة -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -374,7 +487,7 @@
                 <div class="flex justify-between items-center mb-3">
                     <div class="flex items-center gap-2">
                         <div class="bg-white/20 p-2 rounded-lg">
-                            <i data-lucide="activity" class="w-5 h-5"></i>
+                            <i class="fas fa-heartbeat icon-fallback"></i>
                         </div>
                         <div>
                             <h1 class="font-semibold text-large">صيدلية الصدارة</h1>
@@ -382,7 +495,7 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-1 bg-white/10 px-2 py-1 rounded">
-                        <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                        <div class="w-2 h-2 rounded-full bg-green-400"></div>
                         <span class="text-small">متصل</span>
                     </div>
                 </div>
@@ -390,24 +503,30 @@
                 <div class="flex justify-between items-center">
                     <div class="flex gap-1">
                         <button onclick="showModal('transferModal')" class="bg-primary-dark hover:bg-teal-900 p-2 rounded btn" title="تحويل">
-                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                            <i class="fas fa-exchange-alt"></i>
+                        </button>
+                        <button onclick="showModal('uploadModal')" class="bg-primary-dark hover:bg-teal-900 p-2 rounded btn" title="رفع صور">
+                            <i class="fas fa-images"></i>
+                        </button>
+                        <button onclick="showModal('reportDateModal')" class="bg-primary-dark hover:bg-teal-900 p-2 rounded btn" title="تقارير بالتاريخ">
+                            <i class="fas fa-calendar-day"></i>
                         </button>
                         <button onclick="showArchive()" class="bg-primary-dark hover:bg-teal-900 p-2 rounded btn" title="الأرشيف">
-                            <i data-lucide="archive" class="w-4 h-4"></i>
+                            <i class="fas fa-archive"></i>
                         </button>
-                        <button onclick="showModal('calculatorModal')" class="bg-primary-dark hover:bg-teal-900 p-2 rounded btn" title="حاسبة">
-                            <i data-lucide="calculator" class="w-4 h-4"></i>
+                        <button onclick="showCalculator()" class="bg-primary-dark hover:bg-teal-900 p-2 rounded btn" title="حاسبة">
+                            <i class="fas fa-calculator"></i>
                         </button>
                     </div>
                     
                     <div class="tab-container">
-                        <button class="tab-btn active" onclick="switchTab('daily')">
+                        <button class="tab-btn active" onclick="switchTab('daily')" id="dailyTabBtn">
                             اليومية
                         </button>
-                        <button class="tab-btn" onclick="switchTab('deferred')">
+                        <button class="tab-btn" onclick="switchTab('deferred')" id="deferredTabBtn">
                             الآجلة
                         </button>
-                        <button class="tab-btn" onclick="switchTab('reports')">
+                        <button class="tab-btn" onclick="switchTab('reports')" id="reportsTabBtn">
                             التقارير
                         </button>
                     </div>
@@ -465,7 +584,7 @@
                     </div>
                     
                     <button type="submit" id="submitBtn" class="w-full p-3 bg-primary text-white rounded font-medium btn text-medium">
-                        + إضافة العملية
+                        <i class="fas fa-plus mr-2"></i>إضافة العملية
                     </button>
                 </form>
             </div>
@@ -477,12 +596,12 @@
                     <div class="flex items-center gap-2">
                         <span class="text-gray-600 text-small" id="txCount">0 عملية</span>
                         <button onclick="clearAllTransactions()" class="px-2 py-1 bg-red-100 text-red-600 rounded text-small font-medium hover:bg-red-200">
-                            مسح الكل
+                            <i class="fas fa-trash mr-1"></i>مسح الكل
                         </button>
                     </div>
                 </div>
                 
-                <div class="divider"></div>
+                <div class="border-b my-3"></div>
                 
                 <div id="txList" class="space-y-2 list-container"></div>
                 
@@ -498,13 +617,13 @@
         <main id="deferredTab" class="tab-content container mx-auto px-3 py-3">
             <!-- تبويبات داخلية للآجلة -->
             <div class="tab-container">
-                <button class="tab-btn active" onclick="switchDeferredTab('sales')">
+                <button class="tab-btn active" onclick="switchDeferredTab('sales')" id="salesTabBtn">
                     مبيعات آجلة
                 </button>
-                <button class="tab-btn" onclick="switchDeferredTab('purchases')">
+                <button class="tab-btn" onclick="switchDeferredTab('purchases')" id="purchasesTabBtn">
                     مشتريات آجلة
                 </button>
-                <button class="tab-btn" onclick="switchDeferredTab('returns')">
+                <button class="tab-btn" onclick="switchDeferredTab('returns')" id="returnsTabBtn">
                     مردودات آجلة
                 </button>
             </div>
@@ -541,7 +660,7 @@
                     </div>
                     
                     <button onclick="addDeferred()" class="w-full p-3 bg-orange-500 text-white rounded font-medium btn text-medium">
-                        + إضافة عملية آجلة
+                        <i class="fas fa-plus mr-2"></i>إضافة عملية آجلة
                     </button>
                 </div>
             </div>
@@ -562,11 +681,19 @@
         <!-- تبويب التقارير -->
         <main id="reportsTab" class="tab-content container mx-auto px-3 py-3">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                <button onclick="showModal('reportDateModal')" class="card hover:shadow transition-all duration-200 text-right cursor-pointer border border-transparent hover:border-primary">
+                    <div class="text-primary font-medium text-medium mb-2">تقارير بالتاريخ</div>
+                    <div class="text-gray-600 text-small mb-2">اختيار تاريخ لعرض التقرير</div>
+                    <div class="mt-2 text-primary">
+                        <i class="fas fa-calendar-day text-xl"></i>
+                    </div>
+                </button>
+                
                 <button onclick="generateReport('daily_summary')" class="card hover:shadow transition-all duration-200 text-right cursor-pointer border border-transparent hover:border-primary">
                     <div class="text-primary font-medium text-medium mb-2">تقرير اليومية الكامل</div>
-                    <div class="text-gray-600 text-small mb-2">ملف PDF شامل لجميع العمليات</div>
+                    <div class="text-gray-600 text-small mb-2">ملف PDF شامل مع الصور</div>
                     <div class="mt-2 text-primary">
-                        <i data-lucide="file-text" class="w-5 h-5"></i>
+                        <i class="fas fa-file-alt text-xl"></i>
                     </div>
                 </button>
                 
@@ -574,7 +701,7 @@
                     <div class="text-teal-600 font-medium text-medium mb-2">تقارير الصناديق</div>
                     <div class="text-gray-600 text-small mb-2">تقارير منفصلة للصناديق الثلاثة</div>
                     <div class="mt-2 text-teal-500">
-                        <i data-lucide="credit-card" class="w-5 h-5"></i>
+                        <i class="fas fa-credit-card text-xl"></i>
                     </div>
                 </button>
                 
@@ -582,28 +709,39 @@
                     <div class="text-orange-600 font-medium text-medium mb-2">تقارير الآجلة</div>
                     <div class="text-gray-600 text-small mb-2">مبيعات ومشتريات ومردودات آجلة</div>
                     <div class="mt-2 text-orange-500">
-                        <i data-lucide="calendar-clock" class="w-5 h-5"></i>
+                        <i class="fas fa-calendar-alt text-xl"></i>
                     </div>
                 </button>
             </div>
             
             <div id="reportsContainer" class="card hidden">
                 <div class="flex justify-between items-center mb-3">
-                    <h3 id="reportTitle" class="font-medium text-large text-primary"></h3>
+                    <div>
+                        <h3 id="reportTitle" class="font-medium text-large text-primary"></h3>
+                        <p id="reportDateInfo" class="text-small text-gray-600 mt-1"></p>
+                    </div>
                     <div class="flex gap-2">
-                        <button onclick="printReport()" class="px-3 py-2 bg-gray-800 text-white text-small rounded font-medium hover:bg-gray-900">
-                            <i data-lucide="printer" class="w-3 h-3 inline ml-1"></i>
-                            طباعة
+                        <button onclick="printCurrentReport()" class="px-3 py-2 bg-gray-800 text-white text-small rounded font-medium hover:bg-gray-900">
+                            <i class="fas fa-print mr-1"></i>طباعة مع الصور
+                        </button>
+                        <button onclick="printReportWithoutImages()" class="px-3 py-2 bg-gray-400 text-white text-small rounded font-medium hover:bg-gray-500">
+                            <i class="fas fa-file-pdf mr-1"></i>PDF بدون صور
                         </button>
                     </div>
                 </div>
-                <div class="divider"></div>
+                <div class="border-b my-3"></div>
                 <div id="reportContent"></div>
+                
+                <!-- عرض الصور في التقرير -->
+                <div id="reportImages" class="mt-6 hidden">
+                    <h4 class="font-medium text-medium mb-3 text-gray-700">الصور المرفوعة</h4>
+                    <div id="reportImagesContainer" class="image-preview-container"></div>
+                </div>
             </div>
         </main>
 
         <!-- التذييل -->
-        <div class="fixed bottom-0 w-full bg-white border-t p-3 shadow-md z-30 footer">
+        <div class="bg-white border-t p-3 shadow-md">
             <div class="container mx-auto">
                 <div class="flex flex-col md:flex-row gap-3 mb-3">
                     <div class="flex-1">
@@ -631,12 +769,10 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <button onclick="printDailyReport()" class="p-3 bg-gray-800 text-white rounded font-medium btn text-medium">
-                        <i data-lucide="printer" class="w-4 h-4 inline ml-2"></i>
-                        طباعة التقرير الكامل
+                        <i class="fas fa-print mr-2"></i>طباعة التقرير الكامل
                     </button>
                     <button onclick="saveAndClose()" class="p-3 bg-red-600 text-white rounded font-medium btn text-medium">
-                        <i data-lucide="lock" class="w-4 h-4 inline ml-2"></i>
-                        إغلاق اليومية
+                        <i class="fas fa-lock mr-2"></i>إغلاق اليومية
                     </button>
                 </div>
             </div>
@@ -652,11 +788,51 @@
                 <span id="printDate"></span>
                 <span id="printPreparer"></span>
             </div>
+            <div id="printReportDate" class="text-small text-gray-600 mt-2"></div>
         </div>
         <div id="printContent"></div>
-        <div class="mt-4 p-3 border rounded-lg print-section">
+        
+        <!-- منطقة صور الطباعة -->
+        <div id="printImages" class="print-images mt-6 hidden">
+            <h3 class="font-semibold text-medium mb-3 border-b pb-2">الصور المرفوعة</h3>
+            <div id="printImagesContainer" class="grid grid-cols-2 gap-3"></div>
+        </div>
+        
+        <div class="mt-6 p-3 border rounded-lg print-section">
             <strong class="block mb-2 text-medium">ملاحظات:</strong>
             <p id="printNotes" class="text-small"></p>
+        </div>
+    </div>
+
+    <!-- آلة حاسبة مبسطة -->
+    <div id="calculatorModal" class="modal">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-sm m-4">
+            <div class="bg-gray-800 p-4 flex justify-between items-center text-white rounded-t-lg">
+                <h3 class="font-semibold text-medium">آلة حاسبة</h3>
+                <button onclick="hideModal('calculatorModal')" class="hover:bg-gray-700 p-2 rounded transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4 bg-gray-100 text-right text-xl font-mono font-semibold border-b" dir="ltr" id="calcDisplay">0</div>
+            <div class="grid grid-cols-4 gap-2 p-4">
+                <button onclick="calcInput('7')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn">7</button>
+                <button onclick="calcInput('8')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn">8</button>
+                <button onclick="calcInput('9')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn">9</button>
+                <button onclick="calcInput('/')" class="p-3 bg-orange-100 rounded font-medium hover:bg-orange-200 btn">÷</button>
+                <button onclick="calcInput('4')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn">4</button>
+                <button onclick="calcInput('5')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn">5</button>
+                <button onclick="calcInput('6')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn">6</button>
+                <button onclick="calcInput('*')" class="p-3 bg-orange-100 rounded font-medium hover:bg-orange-200 btn">×</button>
+                <button onclick="calcInput('1')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn">1</button>
+                <button onclick="calcInput('2')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn">2</button>
+                <button onclick="calcInput('3')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn">3</button>
+                <button onclick="calcInput('-')" class="p-3 bg-orange-100 rounded font-medium hover:bg-orange-200 btn">-</button>
+                <button onclick="calcClear()" class="p-3 bg-red-100 rounded font-medium hover:bg-red-200 btn">C</button>
+                <button onclick="calcInput('0')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn">0</button>
+                <button onclick="calcInput('.')" class="p-3 bg-gray-50 rounded font-medium hover:bg-gray-100 btn">.</button>
+                <button onclick="calcInput('+')" class="p-3 bg-orange-100 rounded font-medium hover:bg-orange-200 btn">+</button>
+                <button onclick="calcCalculate()" class="p-3 col-span-4 bg-primary text-white rounded font-medium btn">=</button>
+            </div>
         </div>
     </div>
 
@@ -665,19 +841,14 @@
         // تهيئة النظام
         // ============================================
         
-        // تهيئة الأيقونات
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
-        
-        // تعريف أنواع العمليات - تم تغيير "سلف نقدية موظفين" إلى "سلف نقدية"
+        // تعريف أنواع العمليات
         const TX_TYPES = {
             'sales': { label: 'مبيعات نقدية', type: 'in', color: 'text-green-600', bg: 'sale-bg', icon: '💰' },
             'income': { label: 'الواصل / سندات قبض', type: 'in', color: 'text-green-600', bg: 'sale-bg', icon: '💵' },
             'expense': { label: 'سندات صرف موردين', type: 'out', color: 'text-red-600', bg: 'purchase-bg', icon: '📤' },
             'petty': { label: 'نثريات صيدلية', type: 'out', color: 'text-red-600', bg: 'purchase-bg', icon: '🛒' },
             'purchase': { label: 'مشتريات نقدية', type: 'out', color: 'text-red-600', bg: 'purchase-bg', icon: '📦' },
-            'adv_cash': { label: 'سلف نقدية', type: 'out', color: 'text-orange-600', bg: 'advance-bg', icon: '👥' }, // تغيير هنا
+            'adv_cash': { label: 'سلف نقدية', type: 'out', color: 'text-orange-600', bg: 'advance-bg', icon: '👥' },
             'salary_deduction': { label: 'خصم موظفين', type: 'out', color: 'text-orange-600', bg: 'advance-bg', icon: '👤' },
             'shortage': { label: 'نواقص أدوية', type: 'none', color: 'text-red-700', bg: 'shortage-bg', icon: '⚠️' },
             'alert': { label: 'تنبيهات', type: 'none', color: 'text-yellow-700', bg: 'bg-yellow-50', icon: '🔔' },
@@ -690,38 +861,258 @@
             'def_purchase': { label: 'مشتريات آجلة', type: 'purchase', color: 'purchase-text', bg: 'purchase-bg', icon: '📦' },
             'def_return_sale': { label: 'مردود مبيعات آجلة', type: 'return', color: 'return-text', bg: 'return-bg', icon: '🔄' },
             'def_return_purchase': { label: 'مردود مشتريات آجلة', type: 'return', color: 'return-text', bg: 'return-bg', icon: '🔄' },
-            'def_emp': { label: 'سلف آجلة', type: 'advance', color: 'advance-text', bg: 'advance-bg', icon: '👥' } // تغيير هنا
+            'def_emp': { label: 'سلف آجلة', type: 'advance', color: 'advance-text', bg: 'advance-bg', icon: '👥' }
         };
         
         // حالة التبويبات الداخلية للآجلة
         let currentDeferredTab = 'sales';
+        
+        // بيانات التقرير الحالي
+        let currentReport = {
+            type: null,
+            date: null,
+            data: null
+        };
         
         // تهيئة البيانات
         let systemData = {
             transactions: JSON.parse(localStorage.getItem('sadara_tx') || '[]'),
             deferred: JSON.parse(localStorage.getItem('sadara_def') || '[]'),
             archives: JSON.parse(localStorage.getItem('sadara_arch') || '[]'),
-            settings: JSON.parse(localStorage.getItem('sadara_settings') || '{}')
+            settings: JSON.parse(localStorage.getItem('sadara_settings') || '{}'),
+            images: JSON.parse(localStorage.getItem('sadara_images') || '[]')
         };
         
         // ============================================
-        // وظائف النوافذ المنبثقة
+        // وظائف إدارة الصور
+        // ============================================
+        
+        function initializeImageUpload() {
+            const uploadArea = document.getElementById('imageUploadArea');
+            
+            // تفعيل سحب وإفلات الملفات
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                handleImageUpload({ target: { files } });
+            });
+            
+            // تحميل الصور المحفوظة
+            loadSavedImages();
+        }
+        
+        function handleImageUpload(event) {
+            const files = event.target.files;
+            const previewsContainer = document.getElementById('imagePreviews');
+            previewsContainer.innerHTML = '';
+            
+            Array.from(files).forEach(file => {
+                // التحقق من حجم الملف (5MB كحد أقصى)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert(`الملف ${file.name} يتجاوز الحد المسموح به (5MB)`);
+                    return;
+                }
+                
+                // التحقق من نوع الملف
+                if (!file.type.startsWith('image/')) {
+                    alert(`الملف ${file.name} ليس صورة`);
+                    return;
+                }
+                
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    // إنشاء معاينة للصورة
+                    const imageItem = document.createElement('div');
+                    imageItem.className = 'image-item';
+                    
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'image-preview';
+                    img.alt = file.name;
+                    
+                    const removeBtn = document.createElement('div');
+                    removeBtn.className = 'image-remove';
+                    removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                    removeBtn.onclick = function() {
+                        imageItem.remove();
+                    };
+                    
+                    imageItem.appendChild(img);
+                    imageItem.appendChild(removeBtn);
+                    previewsContainer.appendChild(imageItem);
+                    
+                    // حفظ الصورة في localStorage
+                    saveImageToStorage(e.target.result, file.name);
+                };
+                
+                reader.readAsDataURL(file);
+            });
+            
+            // إعادة تعيين حقل الإدخال
+            event.target.value = '';
+        }
+        
+        function saveImageToStorage(imageData, fileName) {
+            const image = {
+                id: Date.now(),
+                data: imageData,
+                name: fileName,
+                date: new Date().toLocaleDateString('ar-EG'),
+                time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+            };
+            
+            systemData.images.push(image);
+            saveData();
+            loadSavedImages();
+            
+            // عرض رسالة نجاح
+            showMessage(`تم رفع الصورة "${fileName}" بنجاح`, 'success');
+        }
+        
+        function loadSavedImages() {
+            const container = document.getElementById('savedImages');
+            const noImagesMsg = document.getElementById('noImagesMessage');
+            
+            container.innerHTML = '';
+            
+            if (systemData.images.length === 0) {
+                noImagesMsg.classList.remove('hidden');
+                return;
+            }
+            
+            noImagesMsg.classList.add('hidden');
+            
+            // عرض الصور المحفوظة
+            systemData.images.forEach(image => {
+                const imageItem = document.createElement('div');
+                imageItem.className = 'image-item';
+                
+                const img = document.createElement('img');
+                img.src = image.data;
+                img.className = 'image-preview';
+                img.alt = image.name;
+                img.title = `${image.name}\n${image.date} ${image.time}`;
+                
+                const removeBtn = document.createElement('div');
+                removeBtn.className = 'image-remove';
+                removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                removeBtn.onclick = function() {
+                    if (confirm('هل تريد حذف هذه الصورة؟')) {
+                        deleteImage(image.id);
+                    }
+                };
+                
+                imageItem.appendChild(img);
+                imageItem.appendChild(removeBtn);
+                container.appendChild(imageItem);
+            });
+        }
+        
+        function deleteImage(imageId) {
+            systemData.images = systemData.images.filter(img => img.id !== imageId);
+            saveData();
+            loadSavedImages();
+            showMessage('تم حذف الصورة بنجاح', 'success');
+        }
+        
+        function loadReportImages() {
+            const container = document.getElementById('reportImagesContainer');
+            const reportImagesSection = document.getElementById('reportImages');
+            
+            container.innerHTML = '';
+            
+            if (systemData.images.length === 0) {
+                reportImagesSection.classList.add('hidden');
+                return;
+            }
+            
+            reportImagesSection.classList.remove('hidden');
+            
+            // عرض الصور في التقرير
+            systemData.images.forEach(image => {
+                const imageItem = document.createElement('div');
+                imageItem.className = 'image-item';
+                
+                const img = document.createElement('img');
+                img.src = image.data;
+                img.className = 'image-preview';
+                img.alt = image.name;
+                img.title = `${image.name}\n${image.date} ${image.time}`;
+                
+                imageItem.appendChild(img);
+                container.appendChild(imageItem);
+            });
+        }
+        
+        function loadPrintImages() {
+            const container = document.getElementById('printImagesContainer');
+            const printImagesSection = document.getElementById('printImages');
+            
+            container.innerHTML = '';
+            
+            if (systemData.images.length === 0) {
+                printImagesSection.classList.add('hidden');
+                return;
+            }
+            
+            printImagesSection.classList.remove('hidden');
+            
+            // عرض الصور للطباعة
+            systemData.images.forEach((image, index) => {
+                const imageDiv = document.createElement('div');
+                imageDiv.className = 'text-center';
+                
+                const img = document.createElement('img');
+                img.src = image.data;
+                img.className = 'print-image';
+                img.alt = image.name;
+                img.style.maxWidth = '100%';
+                img.style.height = 'auto';
+                
+                const caption = document.createElement('div');
+                caption.className = 'text-small text-gray-600 mt-1';
+                caption.textContent = `صورة ${index + 1}: ${image.name}`;
+                
+                imageDiv.appendChild(img);
+                imageDiv.appendChild(caption);
+                container.appendChild(imageDiv);
+            });
+        }
+        
+        // ============================================
+        // وظائف النظام الأساسية
         // ============================================
         
         function showModal(modalId) {
-            document.getElementById(modalId)?.classList.add('active');
-            if (modalId === 'calculatorModal') {
-                document.getElementById('calcDisplay').textContent = calcVal;
+            document.getElementById(modalId).classList.add('active');
+            
+            if (modalId === 'uploadModal') {
+                loadSavedImages();
+            } else if (modalId === 'reportDateModal') {
+                loadSavedReportDates();
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('reportDateSelect').value = today;
             }
         }
         
         function hideModal(modalId) {
-            document.getElementById(modalId)?.classList.remove('active');
+            document.getElementById(modalId).classList.remove('active');
         }
         
-        // ============================================
-        // وظائف التبويبات الرئيسية
-        // ============================================
+        function showCalculator() {
+            showModal('calculatorModal');
+        }
         
         function switchTab(tabName) {
             // إخفاء جميع التبويبات
@@ -735,10 +1126,10 @@
             });
             
             // إظهار التبويب المطلوب
-            document.getElementById(tabName + 'Tab')?.classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.add('active');
             
             // تحديث زر التبويب النشط
-            event.target.classList.add('active');
+            document.getElementById(tabName + 'TabBtn').classList.add('active');
             
             // تحميل محتوى التبويب
             if (tabName === 'daily') {
@@ -748,10 +1139,6 @@
             }
         }
         
-        // ============================================
-        // وظائف تبويبات الآجلة الداخلية
-        // ============================================
-        
         function switchDeferredTab(tabName) {
             currentDeferredTab = tabName;
             
@@ -759,7 +1146,7 @@
             document.querySelectorAll('#deferredTab .tab-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            event.target.classList.add('active');
+            document.getElementById(tabName + 'TabBtn').classList.add('active');
             
             // تحديث العناوين
             const titles = {
@@ -806,14 +1193,12 @@
             const authorField = document.getElementById('reportAuthorField');
             const submitBtn = document.getElementById('submitBtn');
             
-            // أنواع بدون مبلغ (النواقص، التنبيهات، الملاحظات)
             const noAmountTypes = ['shortage', 'alert', 'note'];
             
             if (noAmountTypes.includes(type)) {
                 amountField.style.display = 'none';
                 document.getElementById('amountInput').value = '';
                 
-                // تحديث نص التسمية حسب النوع
                 if (type === 'shortage') {
                     descLabel.textContent = 'اسم الصنف الناقص (الدواء)';
                 } else if (type === 'alert') {
@@ -823,22 +1208,21 @@
                     authorField.style.display = 'block';
                 }
                 
-                // تحديث زر الإرسال
                 if (type === 'shortage') {
-                    submitBtn.innerHTML = '⚠️ تسجيل في النواقص';
+                    submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>تسجيل في النواقص';
                     submitBtn.className = 'w-full p-3 bg-red-600 text-white rounded font-medium btn text-medium';
                 } else if (type === 'alert') {
-                    submitBtn.innerHTML = '🔔 إضافة تنبيه';
+                    submitBtn.innerHTML = '<i class="fas fa-bell mr-2"></i>إضافة تنبيه';
                     submitBtn.className = 'w-full p-3 bg-yellow-600 text-white rounded font-medium btn text-medium';
                 } else if (type === 'note') {
-                    submitBtn.innerHTML = '📝 إضافة ملاحظة';
+                    submitBtn.innerHTML = '<i class="fas fa-sticky-note mr-2"></i>إضافة ملاحظة';
                     submitBtn.className = 'w-full p-3 bg-blue-600 text-white rounded font-medium btn text-medium';
                 }
             } else {
                 amountField.style.display = 'block';
                 descLabel.textContent = 'البيان / التفاصيل';
                 authorField.style.display = 'none';
-                submitBtn.innerHTML = '+ إضافة العملية';
+                submitBtn.innerHTML = '<i class="fas fa-plus mr-2"></i>إضافة العملية';
                 submitBtn.className = 'w-full p-3 bg-primary text-white rounded font-medium btn text-medium';
             }
         }
@@ -863,6 +1247,8 @@
                 return false;
             }
             
+            const currentDate = document.getElementById('currentDate').value || new Date().toISOString().split('T')[0];
+            
             const newTransaction = {
                 id: Date.now(),
                 type: type,
@@ -870,7 +1256,7 @@
                 description: description,
                 fund: fund,
                 author: author,
-                date: new Date().toLocaleDateString('ar-EG'),
+                date: currentDate,
                 time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
             };
             
@@ -907,7 +1293,6 @@
             empty.classList.add('hidden');
             
             let html = '';
-            // عرض آخر 50 عملية فقط للأداء
             const recentTxs = systemData.transactions.slice(-50).reverse();
             
             recentTxs.forEach(tx => {
@@ -928,13 +1313,12 @@
                                 <span class="text-small text-gray-500">${tx.time}</span>
                             </div>
                             <p class="text-gray-800 text-medium mb-1">${tx.description}</p>
-                            <p class="text-small text-gray-600">${tx.fund} ${tx.author ? `| ${tx.author}` : ''}</p>
+                            <p class="text-small text-gray-600">${tx.fund} ${tx.author ? `| ${tx.author}` : ''} | ${tx.date}</p>
                         </div>
                         <div class="transaction-amount text-right">
                             ${tx.amount > 0 ? `<span class="font-medium text-large ${typeInfo.color}">${tx.amount.toFixed(2)}</span>` : ''}
                             <button onclick="deleteTransaction(${tx.id})" class="block mt-2 text-gray-400 hover:text-red-500 text-small">
-                                <i data-lucide="trash-2" class="w-3 h-3 inline ml-1"></i>
-                                حذف
+                                <i class="fas fa-trash mr-1"></i>حذف
                             </button>
                         </div>
                     </div>
@@ -944,11 +1328,6 @@
             list.innerHTML = html;
             document.getElementById('txCount').textContent = `${systemData.transactions.length} عملية`;
             updateBalance(total);
-            
-            // إعادة تهيئة الأيقونات
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
         }
         
         function deleteTransaction(id) {
@@ -999,7 +1378,6 @@
                 type = 'def_purchase';
                 label = 'مشتريات آجلة';
             } else if (currentDeferredTab === 'returns') {
-                // تحديد نوع المردود
                 const reference = document.getElementById('defReference').value;
                 if (reference && reference.toLowerCase().includes('بيع')) {
                     type = 'def_return_sale';
@@ -1025,6 +1403,8 @@
                 return;
             }
             
+            const currentDate = document.getElementById('currentDate').value || new Date().toLocaleDateString('ar-EG');
+            
             const newDeferred = {
                 id: Date.now(),
                 type: type,
@@ -1035,7 +1415,7 @@
                 reference: reference,
                 percentage: percentage,
                 tab: currentDeferredTab,
-                date: new Date().toLocaleDateString('ar-EG')
+                date: currentDate
             };
             
             systemData.deferred.push(newDeferred);
@@ -1054,7 +1434,6 @@
             const list = document.getElementById('deferredList');
             const empty = document.getElementById('emptyDeferred');
             
-            // تصفية حسب التبويب الحالي
             const filtered = systemData.deferred.filter(item => item.tab === currentDeferredTab);
             
             if (filtered.length === 0) {
@@ -1091,8 +1470,7 @@
                             <span class="font-medium text-large text-gray-800">${item.amount.toFixed(2)}</span>
                             ${item.percentage && item.percentage !== 100 ? `<div class="text-small text-blue-600 mt-1">${item.percentage}%</div>` : ''}
                             <button onclick="deleteDeferred(${item.id})" class="block mt-2 text-gray-400 hover:text-red-500 text-small">
-                                <i data-lucide="check-circle" class="w-3 h-3 inline ml-1"></i>
-                                تسوية وحذف
+                                <i class="fas fa-check-circle mr-1"></i>تسوية وحذف
                             </button>
                         </div>
                     </div>
@@ -1100,11 +1478,6 @@
             });
             
             list.innerHTML = html;
-            
-            // إعادة تهيئة الأيقونات
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
         }
         
         function deleteDeferred(id) {
@@ -1116,521 +1489,7 @@
         }
         
         // ============================================
-        // وظائف التقارير
-        // ============================================
-        
-        function generateReport(type) {
-            const container = document.getElementById('reportsContainer');
-            const content = document.getElementById('reportContent');
-            const title = document.getElementById('reportTitle');
-            
-            container.classList.remove('hidden');
-            container.scrollIntoView({ behavior: 'smooth' });
-            
-            switch(type) {
-                case 'daily_summary':
-                    generateDailySummaryReport(content, title);
-                    break;
-                    
-                case 'funds':
-                    generateFundsReport(content, title);
-                    break;
-                    
-                case 'deferred_detailed':
-                    generateDeferredDetailedReport(content, title);
-                    break;
-            }
-            
-            // إعادة تهيئة الأيقونات
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
-        }
-        
-        function generateDailySummaryReport(content, title) {
-            title.textContent = 'تقرير اليومية الشامل';
-            
-            let html = '<div class="space-y-4">';
-            
-            // إحصائيات عامة
-            const dailyTotal = systemData.transactions.reduce((sum, tx) => {
-                const typeInfo = TX_TYPES[tx.type];
-                if (typeInfo.type === 'in') return sum + tx.amount;
-                if (typeInfo.type === 'out') return sum - tx.amount;
-                return sum;
-            }, 0);
-            
-            const shortagesCount = systemData.transactions.filter(tx => tx.type === 'shortage').length;
-            const alertsCount = systemData.transactions.filter(tx => tx.type === 'alert').length;
-            const notesCount = systemData.transactions.filter(tx => tx.type === 'note').length;
-            
-            html += `
-                <div class="report-section bg-gradient-to-r from-teal-50 to-blue-50">
-                    <div class="report-section-title">
-                        <i data-lucide="bar-chart" class="w-4 h-4"></i>
-                        الإحصائيات العامة
-                    </div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        <div class="bg-white p-3 rounded text-center shadow">
-                            <div class="text-large font-medium text-primary">${systemData.transactions.length}</div>
-                            <div class="text-small text-gray-600">العمليات</div>
-                        </div>
-                        <div class="bg-white p-3 rounded text-center shadow">
-                            <div class="text-large font-medium text-orange-600">${systemData.deferred.length}</div>
-                            <div class="text-small text-gray-600">الآجلة</div>
-                        </div>
-                        <div class="bg-white p-3 rounded text-center shadow">
-                            <div class="text-large font-medium text-red-600">${shortagesCount}</div>
-                            <div class="text-small text-gray-600">النواقص</div>
-                        </div>
-                        <div class="bg-white p-3 rounded text-center shadow">
-                            <div class="text-large font-medium ${dailyTotal >= 0 ? 'text-green-600' : 'text-red-600'}">${dailyTotal.toFixed(2)}</div>
-                            <div class="text-small text-gray-600">الصافي</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // تقرير الصناديق الثلاثة
-            html += `
-                <div class="report-section">
-                    <div class="report-section-title">
-                        <i data-lucide="credit-card" class="w-4 h-4"></i>
-                        تقرير الصناديق
-                    </div>
-                    <div class="space-y-3">
-            `;
-            
-            const funds = ['صندوق اليومية', 'صندوق الكريمي', 'الصندوق الرئيسي'];
-            
-            funds.forEach(fund => {
-                const fundTransactions = systemData.transactions.filter(tx => tx.fund === fund);
-                let fundTotal = 0;
-                
-                fundTransactions.forEach(tx => {
-                    const typeInfo = TX_TYPES[tx.type];
-                    if (typeInfo.type === 'in') fundTotal += tx.amount;
-                    if (typeInfo.type === 'out') fundTotal -= tx.amount;
-                });
-                
-                html += `
-                    <div class="border rounded p-3 ${fundTotal >= 0 ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}">
-                        <div class="flex justify-between items-center mb-2">
-                            <h4 class="font-medium text-medium">${fund}</h4>
-                            <span class="font-medium text-large ${fundTotal >= 0 ? 'text-green-600' : 'text-red-600'}">${fundTotal.toFixed(2)}</span>
-                        </div>
-                        <div class="text-small text-gray-600 mb-2">عدد العمليات: ${fundTransactions.length}</div>
-                        ${fundTransactions.slice(0, 3).map(tx => `
-                            <div class="flex justify-between py-1 border-b border-gray-200">
-                                <span class="text-small">${tx.description.substring(0, 25)}${tx.description.length > 25 ? '...' : ''}</span>
-                                <span class="font-medium text-small ${TX_TYPES[tx.type].type === 'in' ? 'text-green-600' : 'text-red-600'}">${tx.amount.toFixed(2)}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            });
-            
-            html += '</div></div>';
-            
-            // تقرير الآجلة
-            html += `
-                <div class="report-section">
-                    <div class="report-section-title">
-                        <i data-lucide="calendar-clock" class="w-4 h-4"></i>
-                        تقرير العمليات الآجلة
-                    </div>
-            `;
-            
-            if (systemData.deferred.length === 0) {
-                html += '<p class="text-gray-500 text-center py-4 text-medium">لا توجد عمليات آجلة</p>';
-            } else {
-                // تصنيف العمليات الآجلة
-                const sales = systemData.deferred.filter(d => d.type === 'def_sale');
-                const purchases = systemData.deferred.filter(d => d.type === 'def_purchase');
-                const returnSales = systemData.deferred.filter(d => d.type === 'def_return_sale');
-                const returnPurchases = systemData.deferred.filter(d => d.type === 'def_return_purchase');
-                
-                html += `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div class="bg-green-50 border border-green-200 rounded p-3">
-                            <h5 class="font-medium text-medium text-green-700 mb-2">المبيعات الآجلة</h5>
-                            <div class="text-large font-medium text-green-700 mb-1">${sales.reduce((sum, s) => sum + s.amount, 0).toFixed(2)}</div>
-                            <div class="text-small text-gray-600">عدد: ${sales.length}</div>
-                        </div>
-                        
-                        <div class="bg-red-50 border border-red-200 rounded p-3">
-                            <h5 class="font-medium text-medium text-red-700 mb-2">المشتريات الآجلة</h5>
-                            <div class="text-large font-medium text-red-700 mb-1">${purchases.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}</div>
-                            <div class="text-small text-gray-600">عدد: ${purchases.length}</div>
-                        </div>
-                        
-                        <div class="bg-blue-50 border border-blue-200 rounded p-3">
-                            <h5 class="font-medium text-medium text-blue-700 mb-2">مردود المبيعات</h5>
-                            <div class="text-large font-medium text-blue-700 mb-1">${returnSales.reduce((sum, rs) => sum + rs.amount, 0).toFixed(2)}</div>
-                            <div class="text-small text-gray-600">عدد: ${returnSales.length}</div>
-                        </div>
-                        
-                        <div class="bg-indigo-50 border border-indigo-200 rounded p-3">
-                            <h5 class="font-medium text-medium text-indigo-700 mb-2">مردود المشتريات</h5>
-                            <div class="text-large font-medium text-indigo-700 mb-1">${returnPurchases.reduce((sum, rp) => sum + rp.amount, 0).toFixed(2)}</div>
-                            <div class="text-small text-gray-600">عدد: ${returnPurchases.length}</div>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            html += '</div>';
-            html += '</div>'; // نهاية space-y-4
-            
-            content.innerHTML = html;
-        }
-        
-        function generateFundsReport(content, title) {
-            title.textContent = 'تقارير الصناديق المنفصلة';
-            
-            let html = '<div class="space-y-4">';
-            
-            const funds = [
-                { name: 'صندوق اليومية', color: 'primary', icon: 'wallet' },
-                { name: 'صندوق الكريمي', color: 'teal', icon: 'credit-card' },
-                { name: 'الصندوق الرئيسي', color: 'blue', icon: 'banknote' }
-            ];
-            
-            funds.forEach(fund => {
-                const fundTransactions = systemData.transactions.filter(tx => tx.fund === fund.name);
-                let fundIn = 0;
-                let fundOut = 0;
-                let fundTotal = 0;
-                
-                fundTransactions.forEach(tx => {
-                    const typeInfo = TX_TYPES[tx.type];
-                    if (typeInfo.type === 'in') {
-                        fundIn += tx.amount;
-                        fundTotal += tx.amount;
-                    }
-                    if (typeInfo.type === 'out') {
-                        fundOut += tx.amount;
-                        fundTotal -= tx.amount;
-                    }
-                });
-                
-                html += `
-                    <div class="report-section border border-${fund.color}-200 bg-${fund.color}-50">
-                        <div class="report-section-title text-${fund.color}-700">
-                            <i data-lucide="${fund.icon}" class="w-4 h-4"></i>
-                            ${fund.name}
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
-                            <div class="bg-white p-3 rounded text-center">
-                                <div class="text-large font-medium text-green-600">${fundIn.toFixed(2)}</div>
-                                <div class="text-small text-gray-600">إجمالي الوارد</div>
-                            </div>
-                            <div class="bg-white p-3 rounded text-center">
-                                <div class="text-large font-medium text-red-600">${fundOut.toFixed(2)}</div>
-                                <div class="text-small text-gray-600">إجمالي المنصرف</div>
-                            </div>
-                            <div class="bg-white p-3 rounded text-center">
-                                <div class="text-large font-medium ${fundTotal >= 0 ? 'text-green-600' : 'text-red-600'}">${fundTotal.toFixed(2)}</div>
-                                <div class="text-small text-gray-600">صافي الصندوق</div>
-                            </div>
-                        </div>
-                        
-                        <h5 class="font-medium text-medium mb-2">تفاصيل العمليات (${fundTransactions.length})</h5>
-                        <div class="overflow-x-auto">
-                            <table class="w-full border-collapse text-small">
-                                <thead>
-                                    <tr class="bg-gray-100">
-                                        <th class="p-2 border text-right">النوع</th>
-                                        <th class="p-2 border text-right">البيان</th>
-                                        <th class="p-2 border text-right">المبلغ</th>
-                                        <th class="p-2 border text-right">الوقت</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                `;
-                
-                fundTransactions.slice(0, 15).forEach(tx => {
-                    const typeInfo = TX_TYPES[tx.type];
-                    html += `
-                        <tr class="hover:bg-gray-50">
-                            <td class="p-2 border text-small ${typeInfo.color}">${typeInfo.label}</td>
-                            <td class="p-2 border text-small">${tx.description}</td>
-                            <td class="p-2 border font-medium ${typeInfo.type === 'in' ? 'text-green-600' : 'text-red-600'}">${tx.amount.toFixed(2)}</td>
-                            <td class="p-2 border text-gray-600">${tx.time}</td>
-                        </tr>
-                    `;
-                });
-                
-                html += `
-                                </tbody>
-                            </table>
-                        </div>
-                        ${fundTransactions.length > 15 ? `<div class="mt-2 text-center text-small text-gray-600">و ${fundTransactions.length - 15} عملية أخرى</div>` : ''}
-                    </div>
-                `;
-            });
-            
-            html += '</div>';
-            content.innerHTML = html;
-        }
-        
-        function generateDeferredDetailedReport(content, title) {
-            title.textContent = 'تقرير العمليات الآجلة التفصيلي';
-            
-            let html = '<div class="space-y-4">';
-            
-            // تصنيف العمليات الآجلة
-            const sales = systemData.deferred.filter(d => d.type === 'def_sale');
-            const purchases = systemData.deferred.filter(d => d.type === 'def_purchase');
-            const returnSales = systemData.deferred.filter(d => d.type === 'def_return_sale');
-            const returnPurchases = systemData.deferred.filter(d => d.type === 'def_return_purchase');
-            const advances = systemData.deferred.filter(d => d.type === 'def_emp');
-            
-            const sections = [
-                { 
-                    title: 'المبيعات الآجلة', 
-                    data: sales, 
-                    color: 'green', 
-                    icon: 'shopping-bag',
-                    total: sales.reduce((sum, s) => sum + s.amount, 0)
-                },
-                { 
-                    title: 'المشتريات الآجلة', 
-                    data: purchases, 
-                    color: 'red', 
-                    icon: 'package',
-                    total: purchases.reduce((sum, p) => sum + p.amount, 0)
-                },
-                { 
-                    title: 'مردود المبيعات الآجلة', 
-                    data: returnSales, 
-                    color: 'blue', 
-                    icon: 'rotate-ccw',
-                    total: returnSales.reduce((sum, rs) => sum + rs.amount, 0)
-                },
-                { 
-                    title: 'مردود المشتريات الآجلة', 
-                    data: returnPurchases, 
-                    color: 'indigo', 
-                    icon: 'rotate-cw',
-                    total: returnPurchases.reduce((sum, rp) => sum + rp.amount, 0)
-                },
-                { 
-                    title: 'سلف الموظفين الآجلة', 
-                    data: advances, 
-                    color: 'orange', 
-                    icon: 'users',
-                    total: advances.reduce((sum, a) => sum + a.amount, 0)
-                }
-            ];
-            
-            sections.forEach(section => {
-                if (section.data.length === 0) return;
-                
-                html += `
-                    <div class="report-section border border-${section.color}-200 bg-${section.color}-50">
-                        <div class="report-section-title text-${section.color}-700">
-                            <i data-lucide="${section.icon}" class="w-4 h-4"></i>
-                            ${section.title}
-                            <span class="mr-auto text-large font-medium">${section.total.toFixed(2)}</span>
-                        </div>
-                        
-                        <div class="overflow-x-auto">
-                            <table class="w-full border-collapse text-small">
-                                <thead>
-                                    <tr class="bg-white">
-                                        <th class="p-2 border text-right">الاسم</th>
-                                        <th class="p-2 border text-right">الوصف</th>
-                                        <th class="p-2 border text-right">المبلغ</th>
-                                        <th class="p-2 border text-right">التاريخ</th>
-                                        <th class="p-2 border text-right">خيارات</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                `;
-                
-                section.data.forEach(item => {
-                    html += `
-                        <tr class="hover:bg-white/80">
-                            <td class="p-2 border font-medium">${item.name}</td>
-                            <td class="p-2 border">${item.description || '-'}</td>
-                            <td class="p-2 border font-medium text-${section.color}-600">${item.amount.toFixed(2)}</td>
-                            <td class="p-2 border text-gray-600">${item.date}</td>
-                            <td class="p-2 border">
-                                <button onclick="deleteDeferred(${item.id})" class="px-2 py-1 bg-red-100 text-red-600 rounded text-small hover:bg-red-200">
-                                    تسوية
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                });
-                
-                html += `
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="mt-2 text-center text-small text-gray-600">
-                            إجمالي ${section.title.toLowerCase()}: <span class="font-medium text-${section.color}-700">${section.total.toFixed(2)}</span>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            if (systemData.deferred.length === 0) {
-                html += '<p class="text-gray-500 text-center py-6 text-medium">لا توجد عمليات آجلة مسجلة</p>';
-            }
-            
-            html += '</div>';
-            content.innerHTML = html;
-        }
-        
-        function printReport() {
-            const content = document.getElementById('reportContent').innerHTML;
-            const title = document.getElementById('reportTitle').textContent;
-            
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <html dir="rtl">
-                <head>
-                    <title>${title}</title>
-                    <style>
-                        body { font-family: 'Noto Sans Arabic', sans-serif; padding: 15px; background: white; font-size: 12px; }
-                        h1 { text-align: center; color: #0d9488; font-size: 18px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0; }
-                        .date { text-align: left; color: #666; font-size: 11px; margin-bottom: 15px; }
-                        .print-section { break-inside: avoid; margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-                        .section-title { font-size: 14px; font-weight: 600; color: #0d9488; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid #e2e8f0; }
-                        table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 11px; }
-                        th { background: #f8fafc; padding: 6px; border: 1px solid #ddd; text-align: right; font-weight: 600; }
-                        td { padding: 5px; border: 1px solid #ddd; text-align: right; }
-                        .total-box { background: #f0f9ff; padding: 8px; border-radius: 4px; margin: 10px 0; border: 1px solid #bae6fd; }
-                        @media print {
-                            body { padding: 10px; }
-                            .no-print { display: none; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <h1>${title}</h1>
-                    <div class="date">${new Date().toLocaleDateString('ar-EG')} - ${new Date().toLocaleTimeString('ar-EG')}</div>
-                    ${content}
-                    <div class="no-print" style="text-align:center; margin-top:20px; padding-top:10px; border-top:1px solid #ddd; color:#666; font-size:11px;">
-                        تم الطباعة من نظام صيدلية الصدارة - ${new Date().toLocaleDateString('ar-EG')}
-                    </div>
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
-            printWindow.print();
-        }
-        
-        function printDailyReport() {
-            const printContent = document.getElementById('printContent');
-            const printDate = document.getElementById('printDate');
-            const printPreparer = document.getElementById('printPreparer');
-            const printNotes = document.getElementById('printNotes');
-            
-            const preparer = document.getElementById('preparerName').value || 'غير محدد';
-            const notes = document.getElementById('generalNotes').value || 'لا توجد ملاحظات';
-            const date = document.getElementById('currentDate').value || new Date().toLocaleDateString('ar-EG');
-            
-            printDate.textContent = `التاريخ: ${date}`;
-            printPreparer.textContent = `مُعد التقرير: ${preparer}`;
-            printNotes.textContent = notes;
-            
-            let html = '<div class="print-section">';
-            
-            // إحصائيات عامة
-            const dailyTotal = systemData.transactions.reduce((sum, tx) => {
-                const typeInfo = TX_TYPES[tx.type];
-                if (typeInfo.type === 'in') return sum + tx.amount;
-                if (typeInfo.type === 'out') return sum - tx.amount;
-                return sum;
-            }, 0);
-            
-            html += `
-                <h3 class="section-title">إحصائيات اليوم</h3>
-                <table class="print-table">
-                    <tr>
-                        <td>عدد العمليات النقدية</td>
-                        <td><strong>${systemData.transactions.length}</strong></td>
-                        <td>عدد العمليات الآجلة</td>
-                        <td><strong>${systemData.deferred.length}</strong></td>
-                    </tr>
-                    <tr>
-                        <td>صافي اليوم</td>
-                        <td colspan="3"><strong class="${dailyTotal >= 0 ? 'text-green-600' : 'text-red-600'}">${dailyTotal.toFixed(2)}</strong></td>
-                    </tr>
-                </table>
-            `;
-            
-            html += '</div>';
-            
-            // تقرير الصناديق
-            html += '<div class="print-section">';
-            html += '<h3 class="section-title">تقارير الصناديق</h3>';
-            
-            const funds = ['صندوق اليومية', 'صندوق الكريمي', 'الصندوق الرئيسي'];
-            funds.forEach(fund => {
-                const fundTransactions = systemData.transactions.filter(tx => tx.fund === fund);
-                let fundTotal = 0;
-                
-                fundTransactions.forEach(tx => {
-                    const typeInfo = TX_TYPES[tx.type];
-                    if (typeInfo.type === 'in') fundTotal += tx.amount;
-                    if (typeInfo.type === 'out') fundTotal -= tx.amount;
-                });
-                
-                html += `
-                    <div style="margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 3px;">
-                        <h4 style="font-weight:600; margin-bottom:5px; font-size:13px;">${fund}</h4>
-                        <div style="display:flex; justify-content:space-between; font-size:12px;">
-                            <span>عدد العمليات: ${fundTransactions.length}</span>
-                            <span style="font-weight:600; ${fundTotal >= 0 ? 'color:green' : 'color:red'}">${fundTotal.toFixed(2)}</span>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            html += '</div>';
-            
-            // تقرير الآجلة
-            if (systemData.deferred.length > 0) {
-                html += '<div class="print-section">';
-                html += '<h3 class="section-title">العمليات الآجلة</h3>';
-                
-                const sales = systemData.deferred.filter(d => d.type === 'def_sale');
-                const purchases = systemData.deferred.filter(d => d.type === 'def_purchase');
-                const returnSales = systemData.deferred.filter(d => d.type === 'def_return_sale');
-                const returnPurchases = systemData.deferred.filter(d => d.type === 'def_return_purchase');
-                
-                html += `
-                    <table class="print-table">
-                        <thead>
-                            <tr>
-                                <th>النوع</th>
-                                <th>العدد</th>
-                                <th>الإجمالي</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${sales.length > 0 ? `<tr><td>المبيعات الآجلة</td><td>${sales.length}</td><td>${sales.reduce((s, a) => s + a.amount, 0).toFixed(2)}</td></tr>` : ''}
-                            ${purchases.length > 0 ? `<tr><td>المشتريات الآجلة</td><td>${purchases.length}</td><td>${purchases.reduce((s, a) => s + a.amount, 0).toFixed(2)}</td></tr>` : ''}
-                            ${returnSales.length > 0 ? `<tr><td>مردود المبيعات</td><td>${returnSales.length}</td><td>${returnSales.reduce((s, a) => s + a.amount, 0).toFixed(2)}</td></tr>` : ''}
-                            ${returnPurchases.length > 0 ? `<tr><td>مردود المشتريات</td><td>${returnPurchases.length}</td><td>${returnPurchases.reduce((s, a) => s + a.amount, 0).toFixed(2)}</td></tr>` : ''}
-                        </tbody>
-                    </table>
-                `;
-                
-                html += '</div>';
-            }
-            
-            printContent.innerHTML = html;
-            window.print();
-        }
-        
-        // ============================================
-        // وظائف النظام الأساسية
+        // وظائف النظام
         // ============================================
         
         function saveData() {
@@ -1639,9 +1498,10 @@
                 localStorage.setItem('sadara_def', JSON.stringify(systemData.deferred));
                 localStorage.setItem('sadara_arch', JSON.stringify(systemData.archives));
                 localStorage.setItem('sadara_settings', JSON.stringify(systemData.settings));
+                localStorage.setItem('sadara_images', JSON.stringify(systemData.images));
             } catch (e) {
                 console.error('خطأ في حفظ البيانات:', e);
-                alert('حدث خطأ في حفظ البيانات. الرجاء المحاولة مرة أخرى.');
+                showMessage('حدث خطأ في حفظ البيانات. الرجاء المحاولة مرة أخرى.', 'error');
             }
         }
         
@@ -1661,15 +1521,15 @@
             }
             
             const time = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+            const currentDate = document.getElementById('currentDate').value || new Date().toLocaleDateString('ar-EG');
             
-            // إضافة عمليتين للتحويل
             const tx1 = {
                 id: Date.now(),
                 type: 'expense',
                 amount: amount,
                 description: `تحويل إلى ${to}`,
                 fund: from,
-                date: new Date().toLocaleDateString('ar-EG'),
+                date: currentDate,
                 time: time
             };
             
@@ -1679,7 +1539,7 @@
                 amount: amount,
                 description: `تحويل من ${from}`,
                 fund: to,
-                date: new Date().toLocaleDateString('ar-EG'),
+                date: currentDate,
                 time: time
             };
             
@@ -1689,11 +1549,7 @@
             hideModal('transferModal');
             
             document.getElementById('tAmount').value = '';
-            
-            // إعادة تهيئة الأيقونات
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
+            showMessage('تم التحويل بنجاح', 'success');
         }
         
         function showArchive() {
@@ -1704,7 +1560,7 @@
             
             let archiveContent = '<h1 style="text-align:center; color:#0d9488; font-size:18px; margin-bottom:20px;">التقارير المؤرشفة</h1>';
             
-            systemData.archives.slice(0, 15).forEach((archive, index) => {
+            systemData.archives.slice(0, 10).forEach((archive, index) => {
                 archiveContent += `
                     <div style="border:1px solid #e2e8f0; padding:15px; margin-bottom:15px; border-radius:8px; background:#f8fafc;">
                         <div style="font-weight:600; color:#0d9488; font-size:14px;">${archive.date}</div>
@@ -1728,7 +1584,6 @@
                         body { font-family: 'Noto Sans Arabic', sans-serif; padding: 20px; background:#f5f7fa; font-size: 12px; }
                         h1 { text-align: center; color: #0d9488; }
                         .container { max-width: 800px; margin: 0 auto; }
-                        button:hover { background: #0f766e !important; }
                     </style>
                 </head>
                 <body>
@@ -1759,6 +1614,7 @@
                 notes: notes,
                 transactions: [...systemData.transactions],
                 deferred: [...systemData.deferred],
+                images: [...systemData.images],
                 timestamp: new Date().toISOString()
             };
             
@@ -1767,40 +1623,564 @@
             // مسح البيانات الحالية
             systemData.transactions = [];
             systemData.deferred = [];
+            systemData.images = [];
             document.getElementById('generalNotes').value = '';
             document.getElementById('preparerName').value = '';
             
             saveData();
             loadDailyTransactions();
             loadDeferredTransactions();
+            loadSavedImages();
             
-            alert('تم إغلاق اليومية بنجاح وحفظها في الأرشيف');
+            showMessage('تم إغلاق اليومية بنجاح وحفظها في الأرشيف', 'success');
         }
         
         // ============================================
-        // الآلة الحاسبة
+        // وظائف التقارير بالتاريخ
         // ============================================
         
-        let calcVal = "0";
-        
-        function calcInput(v) {
-            if (calcVal === "0") calcVal = v;
-            else calcVal += v;
-            document.getElementById('calcDisplay').textContent = calcVal;
-        }
-        
-        function calcClear() {
-            calcVal = "0";
-            document.getElementById('calcDisplay').textContent = calcVal;
-        }
-        
-        function calcCalculate() {
-            try {
-                calcVal = eval(calcVal.replace(/×/g, '*').replace(/÷/g, '/')).toString();
-            } catch {
-                calcVal = "Error";
+        function loadSavedReportDates() {
+            const container = document.getElementById('savedReportDates');
+            container.innerHTML = '';
+            
+            // جمع التواريخ الفريدة من البيانات الحالية
+            const uniqueDates = new Set();
+            
+            // التواريخ من العمليات الحالية
+            systemData.transactions.forEach(tx => {
+                if (tx.date) uniqueDates.add(tx.date);
+            });
+            
+            // التواريخ من الأرشيف
+            systemData.archives.forEach(arch => {
+                if (arch.date) uniqueDates.add(arch.date);
+            });
+            
+            // تحويل إلى مصفوفة وترتيب تنازلياً
+            const sortedDates = Array.from(uniqueDates).sort((a, b) => new Date(b) - new Date(a));
+            
+            if (sortedDates.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">لا توجد تقارير محفوظة</p>';
+                return;
             }
-            document.getElementById('calcDisplay').textContent = calcVal;
+            
+            sortedDates.slice(0, 10).forEach(date => {
+                const dateBtn = document.createElement('button');
+                dateBtn.className = 'w-full p-3 text-right bg-gray-50 hover:bg-gray-100 rounded transition text-small';
+                dateBtn.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span>${formatDateArabic(date)}</span>
+                        <i class="fas fa-chevron-left text-gray-400"></i>
+                    </div>
+                `;
+                dateBtn.onclick = () => {
+                    document.getElementById('reportDateSelect').value = date;
+                };
+                container.appendChild(dateBtn);
+            });
+        }
+        
+        function generateReportForSelectedDate() {
+            const selectedDate = document.getElementById('reportDateSelect').value;
+            if (!selectedDate) {
+                alert('الرجاء اختيار تاريخ');
+                return;
+            }
+            
+            currentReport.date = selectedDate;
+            currentReport.type = 'daily_summary';
+            
+            // توليد التقرير
+            const container = document.getElementById('reportsContainer');
+            const content = document.getElementById('reportContent');
+            const title = document.getElementById('reportTitle');
+            const dateInfo = document.getElementById('reportDateInfo');
+            
+            container.classList.remove('hidden');
+            container.scrollIntoView({ behavior: 'smooth' });
+            
+            title.textContent = 'تقرير اليومية الشامل';
+            dateInfo.textContent = `التاريخ: ${formatDateArabic(selectedDate)}`;
+            
+            // جمع بيانات التاريخ المحدد
+            const dateTransactions = systemData.transactions.filter(tx => tx.date === selectedDate);
+            const dateDeferred = systemData.deferred.filter(def => def.date === selectedDate);
+            
+            const dailyTotal = dateTransactions.reduce((sum, tx) => {
+                const typeInfo = TX_TYPES[tx.type];
+                if (typeInfo.type === 'in') return sum + tx.amount;
+                if (typeInfo.type === 'out') return sum - tx.amount;
+                return sum;
+            }, 0);
+            
+            // تصنيف العمليات حسب النوع
+            const transactionsByType = {};
+            dateTransactions.forEach(tx => {
+                if (!transactionsByType[tx.type]) {
+                    transactionsByType[tx.type] = {
+                        label: TX_TYPES[tx.type]?.label || tx.type,
+                        icon: TX_TYPES[tx.type]?.icon || '📋',
+                        transactions: [],
+                        total: 0
+                    };
+                }
+                transactionsByType[tx.type].transactions.push(tx);
+                const typeInfo = TX_TYPES[tx.type];
+                if (typeInfo?.type === 'in') {
+                    transactionsByType[tx.type].total += tx.amount;
+                } else if (typeInfo?.type === 'out') {
+                    transactionsByType[tx.type].total -= tx.amount;
+                }
+            });
+            
+            // تصنيف العمليات الآجلة
+            const deferredByType = {};
+            dateDeferred.forEach(def => {
+                const typeKey = def.tab || 'other';
+                if (!deferredByType[typeKey]) {
+                    deferredByType[typeKey] = {
+                        label: typeKey === 'sales' ? 'مبيعات آجلة' : 
+                               typeKey === 'purchases' ? 'مشتريات آجلة' : 
+                               typeKey === 'returns' ? 'مردودات آجلة' : 'آجلة أخرى',
+                        transactions: [],
+                        total: 0
+                    };
+                }
+                deferredByType[typeKey].transactions.push(def);
+                deferredByType[typeKey].total += def.amount;
+            });
+            
+            // إنشاء HTML للتقرير
+            let html = `
+                <div class="space-y-6">
+                    <div class="report-section">
+                        <div class="report-section-title">
+                            <i class="fas fa-chart-bar mr-2"></i>
+                            الإحصائيات العامة للتاريخ
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div class="bg-white p-4 rounded text-center shadow border">
+                                <div class="text-large font-medium text-primary">${dateTransactions.length}</div>
+                                <div class="text-small text-gray-600">العمليات النقدية</div>
+                            </div>
+                            <div class="bg-white p-4 rounded text-center shadow border">
+                                <div class="text-large font-medium text-orange-600">${dateDeferred.length}</div>
+                                <div class="text-small text-gray-600">العمليات الآجلة</div>
+                            </div>
+                            <div class="bg-white p-4 rounded text-center shadow border">
+                                <div class="text-large font-medium text-red-600">${dateTransactions.filter(tx => tx.type === 'shortage').length}</div>
+                                <div class="text-small text-gray-600">النواقص</div>
+                            </div>
+                            <div class="bg-white p-4 rounded text-center shadow border">
+                                <div class="text-large font-medium ${dailyTotal >= 0 ? 'text-green-600' : 'text-red-600'}">${dailyTotal.toFixed(2)}</div>
+                                <div class="text-small text-gray-600">صافي اليوم</div>
+                            </div>
+                        </div>
+                    </div>
+            `;
+            
+            // عرض العمليات النقدية حسب النوع
+            if (Object.keys(transactionsByType).length > 0) {
+                html += `
+                    <div class="report-section">
+                        <div class="report-section-title">
+                            <i class="fas fa-cash-register mr-2"></i>
+                            التفاصيل النقدية
+                        </div>
+                        <div class="space-y-4">
+                `;
+                
+                for (const [type, data] of Object.entries(transactionsByType)) {
+                    html += `
+                        <div class="border rounded-lg overflow-hidden">
+                            <div class="bg-gray-50 p-3 font-medium border-b flex justify-between items-center">
+                                <div>
+                                    <span class="ml-2">${data.icon}</span>
+                                    ${data.label}
+                                </div>
+                                <div class="font-semibold ${data.total >= 0 ? 'text-green-600' : 'text-red-600'}">
+                                    ${Math.abs(data.total).toFixed(2)}
+                                </div>
+                            </div>
+                            <div class="p-3 space-y-2 max-h-60 overflow-y-auto">
+                    `;
+                    
+                    data.transactions.forEach(tx => {
+                        html += `
+                            <div class="flex justify-between items-center p-2 bg-white border rounded">
+                                <div>
+                                    <div class="font-medium">${tx.description}</div>
+                                    <div class="text-small text-gray-600">${tx.fund} | ${tx.time}</div>
+                                </div>
+                                <div class="font-semibold ${TX_TYPES[tx.type]?.color || 'text-gray-700'}">
+                                    ${tx.amount.toFixed(2)}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // عرض العمليات الآجلة
+            if (Object.keys(deferredByType).length > 0) {
+                html += `
+                    <div class="report-section">
+                        <div class="report-section-title">
+                            <i class="fas fa-calendar-alt mr-2"></i>
+                            العمليات الآجلة
+                        </div>
+                        <div class="space-y-4">
+                `;
+                
+                for (const [type, data] of Object.entries(deferredByType)) {
+                    html += `
+                        <div class="border rounded-lg overflow-hidden">
+                            <div class="bg-gray-50 p-3 font-medium border-b flex justify-between items-center">
+                                <div>${data.label}</div>
+                                <div class="font-semibold text-orange-600">${data.total.toFixed(2)}</div>
+                            </div>
+                            <div class="p-3 space-y-2">
+                    `;
+                    
+                    data.transactions.forEach(def => {
+                        html += `
+                            <div class="flex justify-between items-center p-2 bg-white border rounded">
+                                <div>
+                                    <div class="font-medium">${def.name}</div>
+                                    <div class="text-small text-gray-600">${def.description || 'لا يوجد وصف'}</div>
+                                </div>
+                                <div class="font-semibold text-gray-800">
+                                    ${def.amount.toFixed(2)}
+                                    ${def.percentage && def.percentage !== 100 ? `<div class="text-small text-blue-600">${def.percentage}%</div>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += `
+                    <div class="report-section">
+                        <div class="report-section-title">
+                            <i class="fas fa-images mr-2"></i>
+                            معلومات الصور
+                        </div>
+                        <div class="bg-blue-50 p-4 rounded border">
+                            <p class="text-medium">
+                                <i class="fas fa-info-circle text-blue-600 mr-2"></i>
+                                عدد الصور المرفوعة: <strong>${systemData.images.length}</strong>
+                            </p>
+                            <p class="text-small text-gray-600 mt-2">
+                                ملاحظة: سيتم عرض جميع الصور المرفوعة في نسخة الطباعة
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            content.innerHTML = html;
+            
+            // حفظ بيانات التقرير الحالي
+            currentReport.data = {
+                date: selectedDate,
+                transactions: dateTransactions,
+                deferred: dateDeferred,
+                total: dailyTotal,
+                html: html
+            };
+            
+            // تحميل الصور في التقرير
+            loadReportImages();
+            
+            hideModal('reportDateModal');
+        }
+        
+        function printReportForSelectedDate() {
+            const selectedDate = document.getElementById('reportDateSelect').value;
+            if (!selectedDate) {
+                alert('الرجاء اختيار تاريخ');
+                return;
+            }
+            
+            // جمع بيانات التاريخ المحدد للطباعة
+            const dateTransactions = systemData.transactions.filter(tx => tx.date === selectedDate);
+            const dateDeferred = systemData.deferred.filter(def => def.date === selectedDate);
+            
+            const dailyTotal = dateTransactions.reduce((sum, tx) => {
+                const typeInfo = TX_TYPES[tx.type];
+                if (typeInfo.type === 'in') return sum + tx.amount;
+                if (typeInfo.type === 'out') return sum - tx.amount;
+                return sum;
+            }, 0);
+            
+            // تحضير HTML للطباعة
+            let printHtml = `
+                <h1 style="text-align:center; color:#0d9488; font-size:20px; margin-bottom:10px;">
+                    صيدلية الصدارة
+                </h1>
+                <h2 style="text-align:center; color:#333; font-size:16px; margin-bottom:15px;">
+                    تقرير يومية مفصل
+                </h2>
+                <div style="text-align:center; color:#666; font-size:12px; margin-bottom:20px; border-bottom:1px solid #ddd; padding-bottom:10px;">
+                    <div>التاريخ: ${formatDateArabic(selectedDate)}</div>
+                    <div>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-EG')}</div>
+                </div>
+                
+                <div style="margin-bottom:20px;">
+                    <h3 style="color:#0d9488; font-size:14px; border-bottom:1px solid #ddd; padding-bottom:5px; margin-bottom:10px;">
+                        الإحصائيات
+                    </h3>
+                    <table style="width:100%; border-collapse:collapse; font-size:11px;">
+                        <tr>
+                            <td style="border:1px solid #ddd; padding:8px; background:#f8fafc;">عدد العمليات النقدية</td>
+                            <td style="border:1px solid #ddd; padding:8px; text-align:center; font-weight:bold;">${dateTransactions.length}</td>
+                            <td style="border:1px solid #ddd; padding:8px; background:#f8fafc;">عدد العمليات الآجلة</td>
+                            <td style="border:1px solid #ddd; padding:8px; text-align:center; font-weight:bold;">${dateDeferred.length}</td>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #ddd; padding:8px; background:#f8fafc;">عدد النواقص</td>
+                            <td style="border:1px solid #ddd; padding:8px; text-align:center; font-weight:bold; color:#dc2626;">${dateTransactions.filter(tx => tx.type === 'shortage').length}</td>
+                            <td style="border:1px solid #ddd; padding:8px; background:#f8fafc;">صافي اليوم</td>
+                            <td style="border:1px solid #ddd; padding:8px; text-align:center; font-weight:bold; ${dailyTotal >= 0 ? 'color:#166534;' : 'color:#dc2626;'}">${dailyTotal.toFixed(2)}</td>
+                        </tr>
+                    </table>
+                </div>
+            `;
+            
+            // العمليات النقدية
+            if (dateTransactions.length > 0) {
+                printHtml += `
+                    <div style="page-break-inside:avoid; margin-bottom:20px;">
+                        <h3 style="color:#0d9488; font-size:14px; border-bottom:1px solid #ddd; padding-bottom:5px; margin-bottom:10px;">
+                            العمليات النقدية
+                        </h3>
+                        <table style="width:100%; border-collapse:collapse; font-size:11px;">
+                            <thead>
+                                <tr style="background:#f1f5f9;">
+                                    <th style="border:1px solid #ddd; padding:6px; text-align:right;">الوقت</th>
+                                    <th style="border:1px solid #ddd; padding:6px; text-align:right;">النوع</th>
+                                    <th style="border:1px solid #ddd; padding:6px; text-align:right;">الصندوق</th>
+                                    <th style="border:1px solid #ddd; padding:6px; text-align:right;">البيان</th>
+                                    <th style="border:1px solid #ddd; padding:6px; text-align:right;">المبلغ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                dateTransactions.forEach(tx => {
+                    const typeInfo = TX_TYPES[tx.type];
+                    const amountColor = typeInfo.type === 'in' ? '#166534' : typeInfo.type === 'out' ? '#dc2626' : '#666';
+                    
+                    printHtml += `
+                        <tr>
+                            <td style="border:1px solid #ddd; padding:6px;">${tx.time || ''}</td>
+                            <td style="border:1px solid #ddd; padding:6px;">${typeInfo?.label || tx.type}</td>
+                            <td style="border:1px solid #ddd; padding:6px;">${tx.fund || ''}</td>
+                            <td style="border:1px solid #ddd; padding:6px;">${tx.description || ''}</td>
+                            <td style="border:1px solid #ddd; padding:6px; color:${amountColor}; font-weight:bold; text-align:left;">${tx.amount.toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+                
+                printHtml += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            // العمليات الآجلة
+            if (dateDeferred.length > 0) {
+                printHtml += `
+                    <div style="page-break-inside:avoid; margin-bottom:20px;">
+                        <h3 style="color:#0d9488; font-size:14px; border-bottom:1px solid #ddd; padding-bottom:5px; margin-bottom:10px;">
+                            العمليات الآجلة
+                        </h3>
+                        <table style="width:100%; border-collapse:collapse; font-size:11px;">
+                            <thead>
+                                <tr style="background:#f1f5f9;">
+                                    <th style="border:1px solid #ddd; padding:6px; text-align:right;">الاسم</th>
+                                    <th style="border:1px solid #ddd; padding:6px; text-align:right;">النوع</th>
+                                    <th style="border:1px solid #ddd; padding:6px; text-align:right;">الوصف</th>
+                                    <th style="border:1px solid #ddd; padding:6px; text-align:right;">المبلغ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                dateDeferred.forEach(def => {
+                    const typeLabel = def.tab === 'sales' ? 'مبيعات آجلة' : 
+                                     def.tab === 'purchases' ? 'مشتريات آجلة' : 
+                                     def.tab === 'returns' ? 'مردود آجل' : 'آجل';
+                    
+                    printHtml += `
+                        <tr>
+                            <td style="border:1px solid #ddd; padding:6px;">${def.name || ''}</td>
+                            <td style="border:1px solid #ddd; padding:6px;">${typeLabel}</td>
+                            <td style="border:1px solid #ddd; padding:6px;">${def.description || ''}</td>
+                            <td style="border:1px solid #ddd; padding:6px; color:#9a3412; font-weight:bold; text-align:left;">${def.amount.toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+                
+                printHtml += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            // افتح نافذة الطباعة
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html dir="rtl">
+                <head>
+                    <title>تقرير ${formatDateArabic(selectedDate)}</title>
+                    <style>
+                        body { font-family: 'Noto Sans Arabic', sans-serif; padding: 15px; background: white; font-size: 11px; }
+                        h1, h2, h3 { margin: 0 0 10px 0; }
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+                        th, td { border: 1px solid #ddd; padding: 6px; text-align: right; }
+                        thead { background: #f8fafc; }
+                        @media print {
+                            body { padding: 10px; }
+                            .no-print { display: none; }
+                            @page { margin: 0.5cm; }
+                        }
+                        .page-break { page-break-before: always; }
+                    </style>
+                </head>
+                <body>
+                    ${printHtml}
+                    <div class="page-break"></div>
+                    <div style="margin-top:20px; padding-top:10px; border-top:1px solid #ddd; text-align:center; font-size:10px; color:#666;">
+                        <p>صيدلية الصدارة - نظام إدارة اليومية V7.4</p>
+                        <p>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-EG')} ${new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</p>
+                    </div>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
+        }
+        
+        function printCurrentReport() {
+            if (!currentReport.date) {
+                alert('لا يوجد تقرير لعرضه');
+                return;
+            }
+            
+            loadPrintImages();
+            
+            const content = document.getElementById('reportContent').innerHTML;
+            const title = document.getElementById('reportTitle').textContent;
+            const dateInfo = document.getElementById('reportDateInfo').textContent;
+            const imagesHtml = document.getElementById('printImages').innerHTML;
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html dir="rtl">
+                <head>
+                    <title>${title} - ${currentReport.date}</title>
+                    <style>
+                        body { font-family: 'Noto Sans Arabic', sans-serif; padding: 15px; background: white; font-size: 12px; }
+                        h1 { text-align: center; color: #0d9488; font-size: 18px; margin-bottom: 10px; }
+                        .date-info { text-align: center; color: #666; font-size: 11px; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+                        .print-images { page-break-inside: avoid; margin-top: 20px; }
+                        .print-image { max-width: 100%; height: auto; margin-bottom: 10px; border: 1px solid #ddd; }
+                        .section-title { font-size: 14px; font-weight: 600; color: #0d9488; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #e2e8f0; }
+                        @media print {
+                            body { padding: 10px; }
+                            .no-print { display: none; }
+                            @page { margin: 0.5cm; }
+                        }
+                        .report-section { margin-bottom: 20px; page-break-inside: avoid; }
+                    </style>
+                </head>
+                <body>
+                    <h1>${title}</h1>
+                    <div class="date-info">${dateInfo} | تاريخ الطباعة: ${new Date().toLocaleDateString('ar-EG')}</div>
+                    ${content}
+                    ${imagesHtml}
+                    <div style="margin-top:30px; padding-top:15px; border-top:1px solid #ddd; text-align:center; font-size:10px; color:#666;">
+                        <p>صيدلية الصدارة - نظام إدارة اليومية V7.4</p>
+                        <p>تم الطباعة بواسطة: ${document.getElementById('preparerName').value || 'غير محدد'}</p>
+                    </div>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
+        }
+        
+        // ============================================
+        // وظائف مساعدة
+        // ============================================
+        
+        function formatDateArabic(dateStr) {
+            if (!dateStr) return '';
+            
+            const date = new Date(dateStr);
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            
+            return date.toLocaleDateString('ar-EG', options);
+        }
+        
+        function showMessage(message, type) {
+            // إنشاء عنصر الرسالة
+            const messageEl = document.createElement('div');
+            messageEl.className = `fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-3 rounded-lg shadow-lg ${
+                type === 'success' ? 'bg-green-500 text-white' : 
+                type === 'error' ? 'bg-red-500 text-white' : 
+                'bg-blue-500 text-white'
+            }`;
+            messageEl.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} mr-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(messageEl);
+            
+            // إخفاء الرسالة بعد 3 ثوانٍ
+            setTimeout(() => {
+                messageEl.style.opacity = '0';
+                messageEl.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => {
+                    document.body.removeChild(messageEl);
+                }, 500);
+            }, 3000);
         }
         
         // ============================================
@@ -1815,6 +2195,9 @@
             // تحميل البيانات
             loadDailyTransactions();
             
+            // تهيئة رفع الصور
+            initializeImageUpload();
+            
             // تحديث رصيد اليوم
             updateBalance(0);
             
@@ -1828,7 +2211,7 @@
                 document.body.style.opacity = '1';
             }, 100);
             
-            console.log('✅ النظام المحسّن جاهز للاستخدام');
+            console.log('✅ النظام جاهز للاستخدام - مع دعم التقارير بالتاريخ');
         }
         
         // بدء النظام عند تحميل الصفحة
