@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>صيدلية الصدارة - النظام السريع V7.5</title>
+    <title>صيدلية الصدارة - النظام السريع V8.0</title>
     
     <!-- استخدام CDN لتحسين السرعة -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -402,6 +402,21 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* بطاقات التقارير السريعة */
+        .report-card {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .report-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .ring-2 {
+            box-shadow: 0 0 0 2px #0d9488;
+        }
     </style>
 </head>
 <body class="min-h-screen text-gray-800">
@@ -409,7 +424,7 @@
     <!-- مؤشر التحميل -->
     <div id="loader" class="loader">
         <div class="spinner"></div>
-        <div class="mt-4 text-primary font-medium">جاري إنشاء PDF...</div>
+        <div class="mt-4 text-primary font-medium" id="loaderText">جاري إنشاء PDF...</div>
     </div>
 
     <!-- نافذة تحميل الصور -->
@@ -533,6 +548,80 @@
         </div>
     </div>
 
+    <!-- نافذة التقارير السريعة -->
+    <div id="quickReportModal" class="modal">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg m-4">
+            <div class="bg-primary p-4 flex justify-between items-center text-white rounded-t-lg">
+                <h3 class="font-semibold text-large">📊 تقارير سريعة</h3>
+                <button onclick="hideModal('quickReportModal')" class="hover:bg-primary-dark p-2 rounded transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4">
+                <!-- بحث سريع -->
+                <div class="mb-4">
+                    <input type="text" id="reportSearch" placeholder="🔍 ابحث عن تقرير..." 
+                           class="w-full p-3 border rounded-lg text-medium"
+                           onkeyup="filterReports()">
+                </div>
+
+                <!-- شبكة التقارير -->
+                <div class="grid grid-cols-2 gap-3" id="reportsGrid">
+                    <!-- التقارير ستضاف هنا ديناميكياً -->
+                </div>
+
+                <!-- خيارات متقدمة -->
+                <div class="mt-6 border-t pt-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-medium text-medium text-gray-700">⚙️ خيارات متقدمة</h4>
+                        <button onclick="toggleAdvancedOptions()" class="text-primary text-small">
+                            <i class="fas fa-cog mr-1"></i>إظهار/إخفاء
+                        </button>
+                    </div>
+                    <div id="advancedOptions" class="hidden space-y-3">
+                        <div>
+                            <label class="text-gray-600 mb-1 block font-medium">📅 النطاق الزمني</label>
+                            <select id="timeRange" class="select-field">
+                                <option value="today">اليوم</option>
+                                <option value="yesterday">أمس</option>
+                                <option value="week">الأسبوع الحالي</option>
+                                <option value="month">الشهر الحالي</option>
+                                <option value="custom">مخصص</option>
+                            </select>
+                        </div>
+                        <div id="customDateRange" class="hidden grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-gray-600 mb-1 block text-small">من تاريخ</label>
+                                <input type="date" id="dateFrom" class="input-field">
+                            </div>
+                            <div>
+                                <label class="text-gray-600 mb-1 block text-small">إلى تاريخ</label>
+                                <input type="date" id="dateTo" class="input-field">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-gray-600 mb-1 block font-medium">📁 تنسيق الملف</label>
+                            <select id="exportFormat" class="select-field">
+                                <option value="print">طباعة مباشرة</option>
+                                <option value="pdf">PDF مع صور</option>
+                                <option value="pdf_nopic">PDF بدون صور</option>
+                                <option value="excel">Excel (CSV)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-gray-50 border-t flex justify-between">
+                <button onclick="hideModal('quickReportModal')" class="px-4 py-2 text-gray-600 hover:text-gray-800">
+                    إلغاء
+                </button>
+                <button onclick="generateQuickReport()" class="px-4 py-2 bg-primary text-white rounded font-medium btn">
+                    <i class="fas fa-play mr-2"></i>تشغيل التقرير
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- الواجهة الرئيسية -->
     <div class="no-print">
         <!-- الهيدر -->
@@ -545,7 +634,7 @@
                         </div>
                         <div>
                             <h1 class="font-semibold text-large">صيدلية الصدارة</h1>
-                            <p class="text-small opacity-90">نظام إدارة اليومية</p>
+                            <p class="text-small opacity-90">نظام إدارة اليومية V8.0</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-1 bg-white/10 px-2 py-1 rounded">
@@ -564,6 +653,9 @@
                         </button>
                         <button onclick="showModal('reportDateModal')" class="bg-primary-dark hover:bg-teal-900 p-2 rounded btn" title="تقارير بالتاريخ">
                             <i class="fas fa-calendar-day"></i>
+                        </button>
+                        <button onclick="showModal('quickReportModal')" class="bg-primary-dark hover:bg-teal-900 p-2 rounded btn" title="تقارير سريعة">
+                            <i class="fas fa-rocket"></i>
                         </button>
                         <button onclick="showArchive()" class="bg-primary-dark hover:bg-teal-900 p-2 rounded btn" title="الأرشيف">
                             <i class="fas fa-archive"></i>
@@ -738,6 +830,14 @@
         <!-- تبويب التقارير -->
         <main id="reportsTab" class="tab-content container mx-auto px-3 py-3">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                <button onclick="showModal('quickReportModal')" class="card hover:shadow transition-all duration-200 text-right cursor-pointer border border-transparent hover:border-primary">
+                    <div class="text-primary font-medium text-medium mb-2">🚀 التقارير السريعة</div>
+                    <div class="text-gray-600 text-small mb-2">8 أنواع تقارير مع خيارات متقدمة</div>
+                    <div class="mt-2 text-primary">
+                        <i class="fas fa-rocket text-xl"></i>
+                    </div>
+                </button>
+                
                 <button onclick="showModal('reportDateModal')" class="card hover:shadow transition-all duration-200 text-right cursor-pointer border border-transparent hover:border-primary">
                     <div class="text-primary font-medium text-medium mb-2">تقارير بالتاريخ</div>
                     <div class="text-gray-600 text-small mb-2">اختيار تاريخ لعرض التقرير</div>
@@ -751,22 +851,6 @@
                     <div class="text-gray-600 text-small mb-2">ملف PDF شامل مع الصور</div>
                     <div class="mt-2 text-primary">
                         <i class="fas fa-file-alt text-xl"></i>
-                    </div>
-                </button>
-                
-                <button onclick="generateReport('funds')" class="card hover:shadow transition-all duration-200 text-right cursor-pointer border border-transparent hover:border-teal-300">
-                    <div class="text-teal-600 font-medium text-medium mb-2">تقارير الصناديق</div>
-                    <div class="text-gray-600 text-small mb-2">تقارير منفصلة للصناديق الثلاثة</div>
-                    <div class="mt-2 text-teal-500">
-                        <i class="fas fa-credit-card text-xl"></i>
-                    </div>
-                </button>
-                
-                <button onclick="generateReport('deferred_detailed')" class="card hover:shadow transition-all duration-200 text-right cursor-pointer border border-transparent hover:border-orange-300">
-                    <div class="text-orange-600 font-medium text-medium mb-2">تقارير الآجلة</div>
-                    <div class="text-gray-600 text-small mb-2">مبيعات ومشتريات ومردودات آجلة</div>
-                    <div class="mt-2 text-orange-500">
-                        <i class="fas fa-calendar-alt text-xl"></i>
                     </div>
                 </button>
             </div>
@@ -919,6 +1003,11 @@
         </div>
     </div>
 
+    <!-- منطقة الطباعة المتقدمة -->
+    <div id="printAdvancedArea" class="print-only p-4" style="display: none;">
+        <div id="advancedPrintContent"></div>
+    </div>
+
     <script>
         // ============================================
         // تهيئة النظام
@@ -973,6 +1062,74 @@
                 tab: 'return_purchases'
             }
         };
+
+        // تعريف أنواع التقارير المتطورة
+        const REPORT_TYPES = [
+            {
+                id: 'daily_cash',
+                name: '💰 تقرير النقدية اليومي',
+                icon: '💰',
+                color: 'bg-green-100 border-green-300',
+                textColor: 'text-green-800',
+                description: 'تفاصيل العمليات النقدية مع الإجماليات'
+            },
+            {
+                id: 'deferred_full',
+                name: '📅 تقرير الآجلة الشامل',
+                icon: '📅',
+                color: 'bg-orange-100 border-orange-300',
+                textColor: 'text-orange-800',
+                description: 'كل العمليات الآجلة مع المردودات'
+            },
+            {
+                id: 'combined',
+                name: '📊 التقرير الموحد',
+                icon: '📊',
+                color: 'bg-blue-100 border-blue-300',
+                textColor: 'text-blue-800',
+                description: 'النقدية والآجلة في تقرير واحد'
+            },
+            {
+                id: 'funds_summary',
+                name: '💼 تقرير الصناديق',
+                icon: '💼',
+                color: 'bg-purple-100 border-purple-300',
+                textColor: 'text-purple-800',
+                description: 'حركة الصناديق الثلاثة'
+            },
+            {
+                id: 'shortages',
+                name: '⚠️ تقرير النواقص',
+                icon: '⚠️',
+                color: 'bg-red-100 border-red-300',
+                textColor: 'text-red-800',
+                description: 'جميع الأدوية الناقصة'
+            },
+            {
+                id: 'alerts_notes',
+                name: '📝 التنبيهات والملاحظات',
+                icon: '📝',
+                color: 'bg-yellow-100 border-yellow-300',
+                textColor: 'text-yellow-800',
+                description: 'جميع التنبيهات والملاحظات اليومية'
+            },
+            {
+                id: 'cash_flow',
+                name: '📈 تقرير التدفق النقدي',
+                icon: '📈',
+                color: 'bg-teal-100 border-teal-300',
+                textColor: 'text-teal-800',
+                description: 'تحليل التدفق النقدي للصندوق'
+            },
+            {
+                id: 'deferred_summary',
+                name: '📋 ملخص الآجلة',
+                icon: '📋',
+                color: 'bg-indigo-100 border-indigo-300',
+                textColor: 'text-indigo-800',
+                description: 'إجماليات الآجلة فقط'
+            }
+        ];
         
         // حالة التبويبات الداخلية للآجلة
         let currentDeferredTab = 'sales';
@@ -983,6 +1140,9 @@
             date: null,
             data: null
         };
+
+        // التقرير المختار للتقارير السريعة
+        let selectedReportId = null;
         
         // تهيئة البيانات
         let systemData = {
@@ -1213,6 +1373,8 @@
                 loadSavedReportDates();
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('reportDateSelect').value = today;
+            } else if (modalId === 'quickReportModal') {
+                initQuickReports();
             }
         }
         
@@ -1220,7 +1382,8 @@
             document.getElementById(modalId).classList.remove('active');
         }
         
-        function showLoader() {
+        function showLoader(text = 'جاري إنشاء PDF...') {
+            document.getElementById('loaderText').textContent = text;
             document.getElementById('loader').classList.add('active');
         }
         
@@ -1641,7 +1804,760 @@
         }
         
         // ============================================
-        // وظائف النظام
+        // نظام التقارير المتطور
+        // ============================================
+        
+        function initQuickReports() {
+            const reportsGrid = document.getElementById('reportsGrid');
+            reportsGrid.innerHTML = '';
+            
+            REPORT_TYPES.forEach(report => {
+                const reportCard = document.createElement('div');
+                reportCard.className = `report-card ${report.color} border rounded-lg p-3 cursor-pointer hover:shadow-md transition-all duration-200`;
+                reportCard.setAttribute('data-id', report.id);
+                reportCard.setAttribute('data-name', report.name);
+                reportCard.onclick = () => selectReport(report.id);
+                
+                reportCard.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <div class="text-xl">${report.icon}</div>
+                        <div class="flex-1">
+                            <h4 class="font-medium ${report.textColor} mb-1">${report.name}</h4>
+                            <p class="text-small text-gray-600">${report.description}</p>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-right">
+                        <i class="fas fa-chevron-left text-gray-400 text-small"></i>
+                    </div>
+                `;
+                
+                reportsGrid.appendChild(reportCard);
+            });
+            
+            // تحديد أول تقرير افتراضيًا
+            if (!selectedReportId && REPORT_TYPES.length > 0) {
+                selectReport(REPORT_TYPES[0].id);
+            }
+        }
+        
+        function selectReport(reportId) {
+            selectedReportId = reportId;
+            
+            // إزالة التحديد السابق
+            document.querySelectorAll('.report-card').forEach(card => {
+                card.classList.remove('ring-2', 'ring-primary');
+            });
+            
+            // إضافة التحديد الجديد
+            const selectedCard = document.querySelector(`[data-id="${reportId}"]`);
+            if (selectedCard) {
+                selectedCard.classList.add('ring-2', 'ring-primary');
+            }
+        }
+        
+        function filterReports() {
+            const searchTerm = document.getElementById('reportSearch').value.toLowerCase();
+            const reportCards = document.querySelectorAll('.report-card');
+            
+            reportCards.forEach(card => {
+                const name = card.getAttribute('data-name').toLowerCase();
+                if (name.includes(searchTerm) || searchTerm === '') {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+        
+        function toggleAdvancedOptions() {
+            const options = document.getElementById('advancedOptions');
+            const timeRange = document.getElementById('timeRange');
+            
+            options.classList.toggle('hidden');
+            
+            // إظهار/إخفاء نطاق التاريخ المخصص
+            timeRange.addEventListener('change', function() {
+                const customRange = document.getElementById('customDateRange');
+                if (this.value === 'custom') {
+                    customRange.classList.remove('hidden');
+                } else {
+                    customRange.classList.add('hidden');
+                }
+            });
+        }
+        
+        async function generateQuickReport() {
+            if (!selectedReportId) {
+                alert('الرجاء اختيار نوع التقرير');
+                return;
+            }
+            
+            const format = document.getElementById('exportFormat').value;
+            const timeRange = document.getElementById('timeRange').value;
+            
+            showLoader('جاري إنشاء التقرير...');
+            
+            try {
+                // حساب النطاق الزمني
+                let dateRange = calculateDateRange(timeRange);
+                
+                // جمع البيانات حسب النطاق الزمني
+                const reportData = await gatherReportData(selectedReportId, dateRange);
+                
+                // إنشاء التقرير
+                const reportHtml = createReportHTML(selectedReportId, reportData, dateRange);
+                
+                // التصدير حسب التنسيق المختار
+                switch(format) {
+                    case 'print':
+                        await printAdvancedReport(reportHtml, reportData);
+                        break;
+                    case 'pdf':
+                        await exportToPDF(reportHtml, reportData, true);
+                        break;
+                    case 'pdf_nopic':
+                        await exportToPDF(reportHtml, reportData, false);
+                        break;
+                    case 'excel':
+                        exportToExcel(reportData);
+                        break;
+                }
+            } catch (error) {
+                console.error('خطأ في إنشاء التقرير:', error);
+                showMessage('حدث خطأ في إنشاء التقرير', 'error');
+            } finally {
+                hideLoader();
+                hideModal('quickReportModal');
+            }
+        }
+        
+        function calculateDateRange(rangeType) {
+            const today = new Date();
+            let startDate, endDate;
+            
+            switch(rangeType) {
+                case 'today':
+                    startDate = endDate = today.toISOString().split('T')[0];
+                    break;
+                case 'yesterday':
+                    const yesterday = new Date(today);
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    startDate = endDate = yesterday.toISOString().split('T')[0];
+                    break;
+                case 'week':
+                    const firstDayOfWeek = new Date(today);
+                    firstDayOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
+                    startDate = firstDayOfWeek.toISOString().split('T')[0];
+                    endDate = today.toISOString().split('T')[0];
+                    break;
+                case 'month':
+                    startDate = new Date(today.getFullYear(), today.getMonth(), 1)
+                        .toISOString().split('T')[0];
+                    endDate = today.toISOString().split('T')[0];
+                    break;
+                case 'custom':
+                    startDate = document.getElementById('dateFrom').value;
+                    endDate = document.getElementById('dateTo').value;
+                    break;
+                default:
+                    startDate = endDate = today.toISOString().split('T')[0];
+            }
+            
+            return { startDate, endDate };
+        }
+        
+        async function gatherReportData(reportId, dateRange) {
+            const { startDate, endDate } = dateRange;
+            
+            // فلترة البيانات حسب التاريخ
+            const filteredTransactions = systemData.transactions.filter(tx => {
+                const txDate = tx.date;
+                return txDate >= startDate && txDate <= endDate;
+            });
+            
+            const filteredDeferred = systemData.deferred.filter(def => {
+                const defDate = def.date;
+                return defDate >= startDate && defDate <= endDate;
+            });
+            
+            // تجميع البيانات حسب نوع التقرير
+            let data = {
+                transactions: filteredTransactions,
+                deferred: filteredDeferred,
+                images: systemData.images.filter(img => {
+                    const imgDate = new Date(img.date).toISOString().split('T')[0];
+                    return imgDate >= startDate && imgDate <= endDate;
+                }),
+                totals: {},
+                summaries: {}
+            };
+            
+            // حساب الإجماليات
+            data.totals = calculateTotals(filteredTransactions, filteredDeferred);
+            data.summaries = generateSummaries(filteredTransactions, filteredDeferred);
+            
+            return data;
+        }
+        
+        function calculateTotals(transactions, deferred) {
+            const totals = {
+                cashIn: 0,
+                cashOut: 0,
+                netCash: 0,
+                deferredSales: 0,
+                deferredPurchases: 0,
+                returnSales: 0,
+                returnPurchases: 0,
+                shortages: 0,
+                alerts: 0,
+                notes: 0
+            };
+            
+            // حساب النقدية
+            transactions.forEach(tx => {
+                const typeInfo = TX_TYPES[tx.type];
+                if (typeInfo?.type === 'in') {
+                    totals.cashIn += tx.amount;
+                } else if (typeInfo?.type === 'out') {
+                    totals.cashOut += tx.amount;
+                } else if (tx.type === 'shortage') {
+                    totals.shortages++;
+                } else if (tx.type === 'alert') {
+                    totals.alerts++;
+                } else if (tx.type === 'note') {
+                    totals.notes++;
+                }
+            });
+            
+            totals.netCash = totals.cashIn - totals.cashOut;
+            
+            // حساب الآجلة
+            deferred.forEach(def => {
+                switch(def.type) {
+                    case 'def_sale':
+                        totals.deferredSales += def.amount;
+                        break;
+                    case 'def_purchase':
+                        totals.deferredPurchases += def.amount;
+                        break;
+                    case 'def_return_sale':
+                        totals.returnSales += def.amount;
+                        break;
+                    case 'def_return_purchase':
+                        totals.returnPurchases += def.amount;
+                        break;
+                }
+            });
+            
+            return totals;
+        }
+        
+        function generateSummaries(transactions, deferred) {
+            const summaries = {
+                byFund: {},
+                byType: {},
+                byDeferredType: {},
+                dailyBreakdown: {}
+            };
+            
+            // تجميع حسب الصندوق
+            transactions.forEach(tx => {
+                if (!summaries.byFund[tx.fund]) {
+                    summaries.byFund[tx.fund] = { in: 0, out: 0 };
+                }
+                
+                const typeInfo = TX_TYPES[tx.type];
+                if (typeInfo?.type === 'in') {
+                    summaries.byFund[tx.fund].in += tx.amount;
+                } else if (typeInfo?.type === 'out') {
+                    summaries.byFund[tx.fund].out += tx.amount;
+                }
+            });
+            
+            // تجميع حسب النوع
+            transactions.forEach(tx => {
+                const typeName = TX_TYPES[tx.type]?.label || tx.type;
+                if (!summaries.byType[typeName]) {
+                    summaries.byType[typeName] = { count: 0, total: 0 };
+                }
+                summaries.byType[typeName].count++;
+                summaries.byType[typeName].total += tx.amount;
+            });
+            
+            // تجميع حسب النوع الآجل
+            deferred.forEach(def => {
+                const typeName = DEFERRED_TYPES[def.type]?.label || def.label;
+                if (!summaries.byDeferredType[typeName]) {
+                    summaries.byDeferredType[typeName] = { count: 0, total: 0 };
+                }
+                summaries.byDeferredType[typeName].count++;
+                summaries.byDeferredType[typeName].total += def.amount;
+            });
+            
+            // تجميع يومي
+            transactions.forEach(tx => {
+                if (!summaries.dailyBreakdown[tx.date]) {
+                    summaries.dailyBreakdown[tx.date] = { transactions: [], total: 0 };
+                }
+                summaries.dailyBreakdown[tx.date].transactions.push(tx);
+                
+                const typeInfo = TX_TYPES[tx.type];
+                if (typeInfo?.type === 'in') {
+                    summaries.dailyBreakdown[tx.date].total += tx.amount;
+                } else if (typeInfo?.type === 'out') {
+                    summaries.dailyBreakdown[tx.date].total -= tx.amount;
+                }
+            });
+            
+            return summaries;
+        }
+        
+        function createReportHTML(reportId, data, dateRange) {
+            const { startDate, endDate } = dateRange;
+            const dateRangeStr = startDate === endDate 
+                ? `التاريخ: ${formatDateArabic(startDate)}`
+                : `الفترة: ${formatDateArabic(startDate)} إلى ${formatDateArabic(endDate)}`;
+            
+            let html = `
+                <div style="font-family: 'Noto Sans Arabic', sans-serif; max-width: 800px; margin: 0 auto;">
+                    <!-- ترويسة التقرير -->
+                    <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #0d9488;">
+                        <h1 style="color: #0d9488; font-size: 24px; margin: 0; font-weight: bold;">
+                            صيدلية الصدارة
+                        </h1>
+                        <h2 style="color: #333; font-size: 18px; margin: 10px 0;">
+                            ${REPORT_TYPES.find(r => r.id === reportId)?.name || 'تقرير'}
+                        </h2>
+                        <div style="color: #666; font-size: 14px; margin-top: 10px;">
+                            <div>${dateRangeStr}</div>
+                            <div>تاريخ التقرير: ${new Date().toLocaleDateString('ar-EG')}</div>
+                        </div>
+                    </div>
+            `;
+            
+            // إضافة المحتوى حسب نوع التقرير
+            switch(reportId) {
+                case 'daily_cash':
+                    html += createDailyCashReport(data);
+                    break;
+                case 'deferred_full':
+                    html += createDeferredFullReport(data);
+                    break;
+                case 'combined':
+                    html += createCombinedReport(data);
+                    break;
+                case 'funds_summary':
+                    html += createFundsReport(data);
+                    break;
+                case 'shortages':
+                    html += createShortagesReport(data);
+                    break;
+                case 'alerts_notes':
+                    html += createAlertsNotesReport(data);
+                    break;
+                case 'cash_flow':
+                    html += createCashFlowReport(data);
+                    break;
+                case 'deferred_summary':
+                    html += createDeferredSummaryReport(data);
+                    break;
+                default:
+                    html += createDailyCashReport(data);
+            }
+            
+            html += `
+                    <!-- تذييل التقرير -->
+                    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; font-size: 12px; color: #666;">
+                        <p style="margin: 5px 0;">صيدلية الصدارة - نظام إدارة اليومية V8.0</p>
+                        <p style="margin: 5px 0;">مُعد التقرير: ${document.getElementById('preparerName').value || 'غير محدد'}</p>
+                        <p style="margin: 5px 0;">وقت الإنشاء: ${new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</p>
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        function createDailyCashReport(data) {
+            const { totals, summaries, transactions } = data;
+            
+            return `
+                <!-- البطاقة الإحصائية -->
+                <div style="margin-bottom: 25px;">
+                    <h3 style="color: #0d9488; font-size: 16px; border-bottom: 1px solid #0d9488; padding-bottom: 8px; margin-bottom: 15px;">
+                        📊 الإحصائيات النقدية
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;">
+                        <div style="background: #f0fdf4; border: 1px solid #dcfce7; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 12px; color: #166534; margin-bottom: 5px;">الإيرادات</div>
+                            <div style="font-size: 20px; font-weight: bold; color: #166534;">${totals.cashIn.toFixed(2)}</div>
+                        </div>
+                        <div style="background: #fef2f2; border: 1px solid #fee2e2; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 12px; color: #991b1b; margin-bottom: 5px;">المصروفات</div>
+                            <div style="font-size: 20px; font-weight: bold; color: #991b1b;">${totals.cashOut.toFixed(2)}</div>
+                        </div>
+                        <div style="background: ${totals.netCash >= 0 ? '#f0fdf4' : '#fef2f2'}; border: 1px solid ${totals.netCash >= 0 ? '#dcfce7' : '#fee2e2'}; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 12px; color: ${totals.netCash >= 0 ? '#166534' : '#991b1b'}; margin-bottom: 5px;">صافي اليوم</div>
+                            <div style="font-size: 20px; font-weight: bold; color: ${totals.netCash >= 0 ? '#166534' : '#991b1b'};">${totals.netCash.toFixed(2)}</div>
+                        </div>
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 12px; color: #475569; margin-bottom: 5px;">عدد العمليات</div>
+                            <div style="font-size: 20px; font-weight: bold; color: #475569;">${transactions.length}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- تفاصيل حسب الصندوق -->
+                <div style="margin-bottom: 25px;">
+                    <h3 style="color: #0d9488; font-size: 16px; border-bottom: 1px solid #0d9488; padding-bottom: 8px; margin-bottom: 15px;">
+                        💼 حركة الصناديق
+                    </h3>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                        <thead>
+                            <tr style="background: #f1f5f9;">
+                                <th style="border: 1px solid #ddd; padding: 10px; text-align: right;">الصندوق</th>
+                                <th style="border: 1px solid #ddd; padding: 10px; text-align: right;">الإيرادات</th>
+                                <th style="border: 1px solid #ddd; padding: 10px; text-align: right;">المصروفات</th>
+                                <th style="border: 1px solid #ddd; padding: 10px; text-align: right;">الصافي</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Object.entries(summaries.byFund).map(([fund, amounts]) => `
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">${fund}</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px; color: #166534; font-weight: bold;">${amounts.in.toFixed(2)}</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px; color: #991b1b; font-weight: bold;">${amounts.out.toFixed(2)}</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px; color: ${(amounts.in - amounts.out) >= 0 ? '#166534' : '#991b1b'}; font-weight: bold;">
+                                        ${(amounts.in - amounts.out).toFixed(2)}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- قائمة العمليات التفصيلية -->
+                <div style="margin-bottom: 25px;">
+                    <h3 style="color: #0d9488; font-size: 16px; border-bottom: 1px solid #0d9488; padding-bottom: 8px; margin-bottom: 15px;">
+                        📋 العمليات التفصيلية
+                    </h3>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                        <thead>
+                            <tr style="background: #f1f5f9;">
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">الوقت</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">النوع</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">الصندوق</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">البيان</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">المبلغ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${transactions.map(tx => {
+                                const typeInfo = TX_TYPES[tx.type];
+                                const amountColor = typeInfo?.type === 'in' ? '#166534' : 
+                                                   typeInfo?.type === 'out' ? '#991b1b' : '#666';
+                                return `
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 6px;">${tx.time || ''}</td>
+                                        <td style="border: 1px solid #ddd; padding: 6px;">${typeInfo?.label || tx.type}</td>
+                                        <td style="border: 1px solid #ddd; padding: 6px;">${tx.fund || ''}</td>
+                                        <td style="border: 1px solid #ddd; padding: 6px;">${tx.description || ''}</td>
+                                        <td style="border: 1px solid #ddd; padding: 6px; color: ${amountColor}; font-weight: bold; text-align: left;">
+                                            ${tx.amount > 0 ? tx.amount.toFixed(2) : '-'}
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+        
+        function createDeferredFullReport(data) {
+            const { totals, deferred } = data;
+            
+            return `
+                <!-- إجماليات الآجلة -->
+                <div style="margin-bottom: 25px;">
+                    <h3 style="color: #0d9488; font-size: 16px; border-bottom: 1px solid #0d9488; padding-bottom: 8px; margin-bottom: 15px;">
+                        📊 إجماليات الآجلة
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;">
+                        <div style="background: #f0fdf4; border: 1px solid #dcfce7; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 12px; color: #166534; margin-bottom: 5px;">مبيعات آجلة</div>
+                            <div style="font-size: 20px; font-weight: bold; color: #166534;">${totals.deferredSales.toFixed(2)}</div>
+                        </div>
+                        <div style="background: #fef2f2; border: 1px solid #fee2e2; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 12px; color: #991b1b; margin-bottom: 5px;">مشتريات آجلة</div>
+                            <div style="font-size: 20px; font-weight: bold; color: #991b1b;">${totals.deferredPurchases.toFixed(2)}</div>
+                        </div>
+                        <div style="background: #ecfdf5; border: 1px solid #d1fae5; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 12px; color: #065f46; margin-bottom: 5px;">مردود مبيعات</div>
+                            <div style="font-size: 20px; font-weight: bold; color: #065f46;">${totals.returnSales.toFixed(2)}</div>
+                        </div>
+                        <div style="background: #fef2f2; border: 1px solid #fee2e2; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 12px; color: #b91c1c; margin-bottom: 5px;">مردود مشتريات</div>
+                            <div style="font-size: 20px; font-weight: bold; color: #b91c1c;">${totals.returnPurchases.toFixed(2)}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- تفاصيل العمليات الآجلة -->
+                <div style="margin-bottom: 25px;">
+                    <h3 style="color: #0d9488; font-size: 16px; border-bottom: 1px solid #0d9488; padding-bottom: 8px; margin-bottom: 15px;">
+                        📋 العمليات الآجلة التفصيلية
+                    </h3>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                        <thead>
+                            <tr style="background: #f1f5f9;">
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">التاريخ</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">النوع</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">الاسم</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">الوصف</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">المبلغ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${deferred.map(def => {
+                                const typeLabel = DEFERRED_TYPES[def.type]?.label || def.label;
+                                const amountColor = def.type === 'def_sale' ? '#166534' : 
+                                                   def.type === 'def_purchase' ? '#991b1b' :
+                                                   def.type === 'def_return_sale' ? '#065f46' :
+                                                   def.type === 'def_return_purchase' ? '#b91c1c' : '#666';
+                                return `
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 6px;">${def.date || ''}</td>
+                                        <td style="border: 1px solid #ddd; padding: 6px;">${typeLabel}</td>
+                                        <td style="border: 1px solid #ddd; padding: 6px;">${def.name || ''}</td>
+                                        <td style="border: 1px solid #ddd; padding: 6px;">${def.description || '-'}</td>
+                                        <td style="border: 1px solid #ddd; padding: 6px; color: ${amountColor}; font-weight: bold; text-align: left;">
+                                            ${def.amount.toFixed(2)}
+                                            ${def.percentage && def.percentage !== 100 ? `<br><small>(${def.percentage}%)</small>` : ''}
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+        
+        function createCombinedReport(data) {
+            return createDailyCashReport(data) + createDeferredFullReport(data);
+        }
+        
+        function createFundsReport(data) {
+            const { summaries } = data;
+            
+            return `
+                <div style="margin-bottom: 25px;">
+                    <h3 style="color: #0d9488; font-size: 16px; border-bottom: 1px solid #0d9488; padding-bottom: 8px; margin-bottom: 15px;">
+                        💼 تقرير حركة الصناديق
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+                        ${Object.entries(summaries.byFund).map(([fund, amounts]) => {
+                            const netAmount = amounts.in - amounts.out;
+                            const bgColor = netAmount >= 0 ? '#f0fdf4' : '#fef2f2';
+                            const borderColor = netAmount >= 0 ? '#dcfce7' : '#fee2e2';
+                            const textColor = netAmount >= 0 ? '#166534' : '#991b1b';
+                            
+                            return `
+                                <div style="background: ${bgColor}; border: 1px solid ${borderColor}; padding: 15px; border-radius: 8px; text-align: center;">
+                                    <div style="font-size: 12px; color: #475569; margin-bottom: 5px;">${fund}</div>
+                                    <div style="font-size: 16px; font-weight: bold; color: #166534; margin-bottom: 3px;">${amounts.in.toFixed(2)} ↑</div>
+                                    <div style="font-size: 16px; font-weight: bold; color: #991b1b; margin-bottom: 3px;">${amounts.out.toFixed(2)} ↓</div>
+                                    <div style="font-size: 18px; font-weight: bold; color: ${textColor}; margin-top: 5px;">${netAmount.toFixed(2)}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function createShortagesReport(data) {
+            const shortages = data.transactions.filter(tx => tx.type === 'shortage');
+            
+            return `
+                <div style="margin-bottom: 25px;">
+                    <h3 style="color: #0d9488; font-size: 16px; border-bottom: 1px solid #0d9488; padding-bottom: 8px; margin-bottom: 15px;">
+                        ⚠️ تقرير النواقص (${shortages.length})
+                    </h3>
+                    ${shortages.length > 0 ? `
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                            <thead>
+                                <tr style="background: #fef2f2;">
+                                    <th style="border: 1px solid #ddd; padding: 10px; text-align: right;">التاريخ</th>
+                                    <th style="border: 1px solid #ddd; padding: 10px; text-align: right;">الوقت</th>
+                                    <th style="border: 1px solid #ddd; padding: 10px; text-align: right;">اسم الدواء الناقص</th>
+                                    <th style="border: 1px solid #ddd; padding: 10px; text-align: right;">الصندوق</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${shortages.map(tx => `
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">${tx.date}</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">${tx.time || ''}</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px; color: #dc2626; font-weight: bold;">${tx.description}</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">${tx.fund || ''}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    ` : `
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; text-align: center;">
+                            <i class="fas fa-check-circle" style="font-size: 36px; color: #10b981; margin-bottom: 10px;"></i>
+                            <div style="font-size: 14px; color: #475569;">لا توجد نواقص مسجلة</div>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+        
+        // ============================================
+        // وظائف التصدير
+        // ============================================
+        
+        async function printAdvancedReport(html, data) {
+            const printWindow = window.open('', '_blank');
+            
+            const printContent = `
+                <!DOCTYPE html>
+                <html dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>تقرير صيدلية الصدارة</title>
+                    <style>
+                        body { 
+                            font-family: 'Noto Sans Arabic', sans-serif; 
+                            padding: 15px; 
+                            background: white; 
+                            font-size: 12px; 
+                            line-height: 1.4;
+                            max-width: 800px;
+                            margin: 0 auto;
+                        }
+                        h1, h2, h3 { margin: 0 0 10px 0; }
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+                        thead { background: #f8fafc; }
+                        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+                        .stat-box { padding: 15px; border-radius: 8px; text-align: center; }
+                        @media print {
+                            body { padding: 10px; }
+                            .no-print { display: none; }
+                            @page { margin: 0.5cm; }
+                        }
+                        .page-break { page-break-before: always; }
+                        .text-center { text-align: center; }
+                    </style>
+                </head>
+                <body>
+                    ${html}
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            setTimeout(function() {
+                                window.close();
+                            }, 1000);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `;
+            
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+        }
+        
+        async function exportToPDF(html, data, includeImages) {
+            showLoader();
+            
+            const options = {
+                margin: [10, 10, 10, 10],
+                filename: `تقرير_${selectedReportId}_${new Date().toISOString().split('T')[0]}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                },
+                jsPDF: { 
+                    unit: 'mm', 
+                    format: 'a4', 
+                    orientation: 'portrait',
+                    compress: true
+                }
+            };
+            
+            try {
+                await html2pdf().from(html).set(options).save();
+                showMessage('تم إنشاء PDF بنجاح', 'success');
+            } catch (error) {
+                console.error('خطأ في إنشاء PDF:', error);
+                showMessage('حدث خطأ في إنشاء PDF', 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+        
+        function exportToExcel(data) {
+            // إنشاء CSV
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            
+            // رأس الملف
+            const headers = ["التاريخ", "النوع", "الصندوق", "البيان", "المبلغ", "الوقت"];
+            csvContent += headers.join(",") + "\n";
+            
+            // البيانات
+            data.transactions.forEach(tx => {
+                const typeInfo = TX_TYPES[tx.type];
+                const row = [
+                    tx.date,
+                    typeInfo?.label || tx.type,
+                    tx.fund,
+                    `"${tx.description.replace(/"/g, '""')}"`,
+                    tx.amount.toFixed(2),
+                    tx.time
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+            
+            // إضافة الآجلة
+            csvContent += "\n\nالعمليات الآجلة\n";
+            const deferredHeaders = ["التاريخ", "النوع", "الاسم", "الوصف", "المبلغ", "النسبة%"];
+            csvContent += deferredHeaders.join(",") + "\n";
+            
+            data.deferred.forEach(def => {
+                const typeLabel = DEFERRED_TYPES[def.type]?.label || def.label;
+                const row = [
+                    def.date,
+                    typeLabel,
+                    def.name,
+                    `"${(def.description || '').replace(/"/g, '""')}"`,
+                    def.amount.toFixed(2),
+                    def.percentage || 100
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+            
+            // تحميل الملف
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `تقرير_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showMessage('تم تصدير البيانات إلى Excel', 'success');
+        }
+        
+        // ============================================
+        // وظائف النظام الأساسية
         // ============================================
         
         function saveData() {
@@ -2280,7 +3196,7 @@
                 <body>
                     ${printHtml}
                     <div style="margin-top:30px; padding-top:15px; border-top:1px solid #ddd; text-align:center; font-size:10px; color:#666;">
-                        <p>صيدلية الصدارة - نظام إدارة اليومية V7.5</p>
+                        <p>صيدلية الصدارة - نظام إدارة اليومية V8.0</p>
                         <p>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-EG')} ${new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</p>
                         <p>مُعد التقرير: ${document.getElementById('preparerName').value || 'غير محدد'}</p>
                     </div>
@@ -2295,7 +3211,7 @@
         }
         
         // ============================================
-        // وظائف PDF
+        // وظائف PDF (القديمة)
         // ============================================
         
         function generatePDF() {
@@ -2367,10 +3283,10 @@
             if (dateTransactions.length > 0) {
                 pdfHtml += `
                     <div style="margin-bottom:30px;">
-                        <h3 style="color:#0d9488; font-size:16px; border-bottom:2px solid #0d9488; padding-bottom:8px; margin-bottom:15px;">
+                        <h3 style="color: #0d9488; font-size: 16px; border-bottom: 2px solid #0d9488; padding-bottom: 8px; margin-bottom: 15px;">
                             العمليات النقدية
                         </h3>
-                        <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                             <thead>
                                 <tr style="background:#f1f5f9;">
                                     <th style="border:1px solid #ddd; padding:8px; text-align:right; font-weight:bold;">الوقت</th>
@@ -2409,10 +3325,10 @@
             if (dateDeferred.length > 0) {
                 pdfHtml += `
                     <div style="margin-bottom:30px;">
-                        <h3 style="color:#0d9488; font-size:16px; border-bottom:2px solid #0d9488; padding-bottom:8px; margin-bottom:15px;">
+                        <h3 style="color: #0d9488; font-size: 16px; border-bottom: 2px solid #0d9488; padding-bottom: 8px; margin-bottom: 15px;">
                             العمليات الآجلة
                         </h3>
-                        <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                             <thead>
                                 <tr style="background:#f1f5f9;">
                                     <th style="border:1px solid #ddd; padding:8px; text-align:right; font-weight:bold;">النوع</th>
@@ -2452,7 +3368,7 @@
             if (systemData.images.length > 0) {
                 pdfHtml += `
                     <div style="margin-bottom:30px;">
-                        <h3 style="color:#0d9488; font-size:16px; border-bottom:2px solid #0d9488; padding-bottom:8px; margin-bottom:15px;">
+                        <h3 style="color: #0d9488; font-size: 16px; border-bottom: 2px solid #0d9488; padding-bottom: 8px; margin-bottom: 15px;">
                             الصور المرفوعة
                         </h3>
                         <div style="text-align:center; padding:20px; background:#f8fafc; border:2px dashed #ddd; border-radius:8px;">
@@ -2470,7 +3386,7 @@
             
             pdfHtml += `
                     <div style="margin-top:40px; padding-top:20px; border-top:2px solid #ddd; text-align:center; font-size:12px; color:#666;">
-                        <p style="margin:5px 0;">صيدلية الصدارة - نظام إدارة اليومية V7.5</p>
+                        <p style="margin:5px 0;">صيدلية الصدارة - نظام إدارة اليومية V8.0</p>
                         <p style="margin:5px 0;">تاريخ الإنشاء: ${new Date().toLocaleDateString('ar-EG')} ${new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</p>
                         <p style="margin:5px 0; font-weight:bold;">مُعد التقرير: ${document.getElementById('preparerName').value || 'غير محدد'}</p>
                     </div>
@@ -2578,10 +3494,10 @@
             if (dateTransactions.length > 0) {
                 pdfHtml += `
                     <div style="margin-bottom:30px;">
-                        <h3 style="color:#0d9488; font-size:16px; border-bottom:2px solid #0d9488; padding-bottom:8px; margin-bottom:15px;">
+                        <h3 style="color: #0d9488; font-size: 16px; border-bottom: 2px solid #0d9488; padding-bottom: 8px; margin-bottom: 15px;">
                             العمليات النقدية
                         </h3>
-                        <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                             <thead>
                                 <tr style="background:#f1f5f9;">
                                     <th style="border:1px solid #ddd; padding:8px; text-align:right; font-weight:bold;">الوقت</th>
@@ -2620,10 +3536,10 @@
             if (dateDeferred.length > 0) {
                 pdfHtml += `
                     <div style="margin-bottom:30px;">
-                        <h3 style="color:#0d9488; font-size:16px; border-bottom:2px solid #0d9488; padding-bottom:8px; margin-bottom:15px;">
+                        <h3 style="color: #0d9488; font-size: 16px; border-bottom: 2px solid #0d9488; padding-bottom: 8px; margin-bottom: 15px;">
                             العمليات الآجلة
                         </h3>
-                        <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                             <thead>
                                 <tr style="background:#f1f5f9;">
                                     <th style="border:1px solid #ddd; padding:8px; text-align:right; font-weight:bold;">النوع</th>
@@ -2661,7 +3577,7 @@
             
             pdfHtml += `
                     <div style="margin-top:40px; padding-top:20px; border-top:2px solid #ddd; text-align:center; font-size:12px; color:#666;">
-                        <p style="margin:5px 0;">صيدلية الصدارة - نظام إدارة اليومية V7.5</p>
+                        <p style="margin:5px 0;">صيدلية الصدارة - نظام إدارة اليومية V8.0</p>
                         <p style="margin:5px 0;">تاريخ الإنشاء: ${new Date().toLocaleDateString('ar-EG')} ${new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</p>
                         <p style="margin:5px 0; font-weight:bold;">مُعد التقرير: ${document.getElementById('preparerName').value || 'غير محدد'}</p>
                         <p style="margin:5px 0; font-size:11px; color:#999;">ملاحظة: تم استبعاد الصور من هذا التقرير</p>
@@ -2744,7 +3660,7 @@
                     ${content}
                     ${imagesHtml}
                     <div style="margin-top:30px; padding-top:15px; border-top:1px solid #ddd; text-align:center; font-size:10px; color:#666;">
-                        <p>صيدلية الصدارة - نظام إدارة اليومية V7.5</p>
+                        <p>صيدلية الصدارة - نظام إدارة اليومية V8.0</p>
                         <p>تم الطباعة بواسطة: ${document.getElementById('preparerName').value || 'غير محدد'}</p>
                     </div>
                 </body>
@@ -2802,6 +3718,64 @@
         }
         
         // ============================================
+        // آلة حاسبة
+        // ============================================
+        
+        let calcValue = '0';
+        let calcPreviousValue = null;
+        let calcOperation = null;
+        
+        function calcInput(value) {
+            if (calcValue === '0' && value !== '.') {
+                calcValue = value;
+            } else {
+                calcValue += value;
+            }
+            updateCalcDisplay();
+        }
+        
+        function calcClear() {
+            calcValue = '0';
+            calcPreviousValue = null;
+            calcOperation = null;
+            updateCalcDisplay();
+        }
+        
+        function calcCalculate() {
+            if (!calcPreviousValue || !calcOperation) return;
+            
+            const prev = parseFloat(calcPreviousValue);
+            const current = parseFloat(calcValue);
+            let result;
+            
+            switch(calcOperation) {
+                case '+':
+                    result = prev + current;
+                    break;
+                case '-':
+                    result = prev - current;
+                    break;
+                case '*':
+                    result = prev * current;
+                    break;
+                case '/':
+                    result = prev / current;
+                    break;
+                default:
+                    return;
+            }
+            
+            calcValue = result.toString();
+            calcPreviousValue = null;
+            calcOperation = null;
+            updateCalcDisplay();
+        }
+        
+        function updateCalcDisplay() {
+            document.getElementById('calcDisplay').textContent = calcValue;
+        }
+        
+        // ============================================
         // تهيئة الصفحة
         // ============================================
         
@@ -2829,7 +3803,7 @@
                 document.body.style.opacity = '1';
             }, 100);
             
-            console.log('✅ النظام جاهز للاستخدام - مع دعم PDF والصور');
+            console.log('✅ النظام جاهز للاستخدام V8.0 - مع نظام التقارير المتطور');
         }
         
         // بدء النظام عند تحميل الصفحة
