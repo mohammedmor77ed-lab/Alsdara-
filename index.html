@@ -3,1370 +3,660 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>صيدلية الصدارة - النظام السريع V8.1</title>
-    
-    <!-- استخدام CDN لتحسين السرعة -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>نظام صيدلية الصدارة المتكامل</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- مكتبة html2pdf -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* ==================== */
-        /* تحسينات الأداء */
-        /* ==================== */
-        * { 
-            font-family: 'Noto Sans Arabic', sans-serif;
-            box-sizing: border-box;
-        }
-        
-        body {
-            margin: 0;
-            padding: 0;
-            background: #f5f7fa;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-        
-        /* تحسينات الطباعة - تم إصلاح مشكلة القطع */
+        body { font-family: 'Cairo', sans-serif; background-color: #f3f4f6; }
+        .pharmacy-gradient { background: linear-gradient(135deg, #059669 0%, #10b981 100%); }
+        .hidden-section { display: none; }
+        /* للطباعة */
         @media print {
             .no-print { display: none !important; }
             .print-only { display: block !important; }
-            body { 
-                background: white !important; 
-                font-size: 12px !important;
-                line-height: 1.3 !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            @page { 
-                margin: 0.5cm !important;
-                size: A4 !important;
-            }
-            
-            /* منع قطع الجداول */
-            table { 
-                page-break-inside: auto !important;
-                border-collapse: collapse !important;
-                width: 100% !important;
-                table-layout: fixed !important;
-            }
-            
-            tr { 
-                page-break-inside: avoid !important;
-                page-break-after: auto !important;
-            }
-            
-            thead { 
-                display: table-header-group !important;
-            }
-            
-            tfoot { 
-                display: table-footer-group !important;
-            }
-            
-            /* منع قطع الصور */
-            img { 
-                max-width: 100% !important;
-                height: auto !important;
-                page-break-inside: avoid !important;
-            }
-            
-            /* منع قطع البطاقات */
-            .print-section { 
-                break-inside: avoid !important;
-                margin-bottom: 10px !important;
-                page-break-inside: avoid !important;
-            }
-            
-            /* تحسين العرض */
-            .print-table { 
-                border-collapse: collapse !important;
-                width: 100% !important;
-                font-size: 11px !important;
-                table-layout: fixed !important;
-            }
-            
-            .print-table th, .print-table td { 
-                border: 1px solid #ddd !important;
-                padding: 4px !important;
-                text-align: right !important;
-                word-wrap: break-word !important;
-                overflow-wrap: break-word !important;
-            }
-            
-            .print-table th { 
-                background: #f8fafc !important;
-                font-weight: bold !important;
-            }
-            
-            /* تجنب القطع بين الصفوف */
-            .avoid-break { 
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
-            
-            .page-break { 
-                page-break-before: always !important;
-            }
-        }
-        
-        .print-only { display: none; }
-        
-        /* ==================== */
-        /* تحسينات التصميم */
-        /* ==================== */
-        .card {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            padding: 15px;
-            margin-bottom: 12px;
-            border: 1px solid #eef2f7;
-        }
-        
-        /* ==================== */
-        /* تحسينات النظام */
-        /* ==================== */
-        
-        /* مؤشر الحفظ التلقائي */
-        .save-indicator {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            z-index: 1000;
-            background: #0d9488;
-            color: white;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 12px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            display: none;
-            animation: fadeInOut 2s ease-in-out;
-        }
-        
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translateY(10px); }
-            10% { opacity: 1; transform: translateY(0); }
-            90% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(10px); }
-        }
-        
-        /* تحسين الأداء للقوائم */
-        .transaction-item {
-            background: white;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 8px;
-            border: 1px solid #eef2f7;
-            transition: all 0.2s ease;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            will-change: transform;
-        }
-        
-        /* تحسينات الطباعة المتقدمة */
-        .print-container {
-            max-width: 21cm !important;
-            margin: 0 auto !important;
-            padding: 1cm !important;
-        }
-        
-        .print-header {
-            text-align: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #0d9488;
-        }
-        
-        .print-footer {
-            margin-top: 30px;
-            padding-top: 10px;
-            border-top: 1px solid #ddd;
-            text-align: center;
-            font-size: 10px;
-            color: #666;
-        }
-        
-        /* تحسينات النوافذ المنبثقة */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(2px);
-        }
-        
-        /* ==================== */
-        /* تحسينات الأداء العامة */
-        /* ==================== */
-        .optimized-list {
-            transform: translateZ(0);
-            backface-visibility: hidden;
-            perspective: 1000;
-        }
-        
-        /* مؤشر التحميل */
-        .loader {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.95);
-            z-index: 10000;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-        }
-        
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #0d9488;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* تحسينات التبويبات */
-        .tab-btn {
-            flex: 1;
-            text-align: center;
-            padding: 8px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 14px;
-            transition: all 0.2s ease;
-            min-width: 80px;
-            margin: 1px;
-        }
-        
-        /* بقية الأنماط كما هي مع تحسينات طفيفة */
-        .input-field, .select-field {
-            transition: all 0.2s ease;
-        }
-        
-        .input-field:focus, .select-field:focus {
-            outline: none;
-            border-color: #0d9488;
-            box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.1);
-        }
-        
-        /* تحسينات الطباعة */
-        @media print {
-            .print-break-avoid {
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
-            
-            .print-page-break {
-                page-break-before: always !important;
-            }
-            
-            .print-small-text {
-                font-size: 9px !important;
-            }
-            
-            .print-no-border {
-                border: none !important;
-            }
         }
     </style>
 </head>
-<body class="min-h-screen text-gray-800">
+<body class="bg-gray-50 min-h-screen pb-20">
 
-    <!-- مؤشر الحفظ التلقائي -->
-    <div id="saveIndicator" class="save-indicator">
-        <i class="fas fa-save mr-2"></i>تم الحفظ تلقائيًا
+    <!-- Login / Sync Screen -->
+    <div id="loginScreen" class="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center p-4">
+        <div class="bg-emerald-100 p-4 rounded-full mb-6 animate-pulse">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">صيدلية الصدارة</h1>
+        <p class="text-gray-500 mb-8 text-center">جاري المزامنة وتحميل بيانات العملاء...</p>
+        <button onclick="simulateLogin()" class="bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-emerald-700 transition w-full max-w-xs">
+            تسجيل الدخول للنظام
+        </button>
     </div>
 
-    <!-- مؤشر التحميل -->
-    <div id="loader" class="loader">
-        <div class="spinner"></div>
-        <div class="mt-4 text-primary font-medium" id="loaderText">جاري المعالجة...</div>
-    </div>
-
-    <!-- بقية HTML كما هو مع تحسينات بسيطة -->
-    <!-- ================================================ -->
-    
-<script>
-// ============================================
-// تحسينات النظام الأساسية
-// ============================================
-
-// تعريف المتغيرات الأساسية
-const TX_TYPES = { /* ... كما هي ... */ };
-const DEFERRED_TYPES = { /* ... كما هي ... */ };
-const REPORT_TYPES = [ /* ... كما هي ... */ ];
-
-// نظام الذاكرة المؤقتة للأداء
-let systemData = {
-    transactions: [],
-    deferred: [],
-    archives: [],
-    settings: {},
-    images: [],
-    lastSync: Date.now()
-};
-
-// محولات الأداء
-let debounceTimer;
-let saveTimer;
-let selectedReportId = null;
-let currentDeferredTab = 'sales';
-let currentReport = { type: null, date: null, data: null };
-
-// ============================================
-// نظام المزامنة التلقائية المحسّن
-// ============================================
-
-// تحميل البيانات الأولية مع معالجة الأخطاء
-function loadInitialData() {
-    try {
-        const txData = localStorage.getItem('sadara_tx');
-        const defData = localStorage.getItem('sadara_def');
-        const archData = localStorage.getItem('sadara_arch');
-        const settingsData = localStorage.getItem('sadara_settings');
-        const imagesData = localStorage.getItem('sadara_images');
+    <!-- Main App Layout (Hidden until Login) -->
+    <div id="appLayout" class="hidden-section">
         
-        systemData.transactions = txData ? JSON.parse(txData) : [];
-        systemData.deferred = defData ? JSON.parse(defData) : [];
-        systemData.archives = archData ? JSON.parse(archData) : [];
-        systemData.settings = settingsData ? JSON.parse(settingsData) : {};
-        systemData.images = imagesData ? JSON.parse(imagesData) : [];
-        systemData.lastSync = Date.now();
-        
-        console.log('✅ البيانات المحملة بنجاح:', {
-            transactions: systemData.transactions.length,
-            deferred: systemData.deferred.length,
-            archives: systemData.archives.length,
-            images: systemData.images.length
-        });
-    } catch (error) {
-        console.error('❌ خطأ في تحميل البيانات:', error);
-        showMessage('حدث خطأ في تحميل البيانات. سيتم البدء ببيانات جديدة.', 'error');
-        systemData = { transactions: [], deferred: [], archives: [], settings: {}, images: [], lastSync: Date.now() };
-    }
-}
-
-// حفظ البيانات المحسّن مع منع التكرار
-function saveData(force = false) {
-    if (!force && saveTimer) {
-        clearTimeout(saveTimer);
-    }
-    
-    saveTimer = setTimeout(() => {
-        try {
-            // حفظ البيانات مع التحقق من الحجم
-            const txData = JSON.stringify(systemData.transactions);
-            const defData = JSON.stringify(systemData.deferred);
-            const archData = JSON.stringify(systemData.archives);
-            const settingsData = JSON.stringify(systemData.settings);
-            const imagesData = JSON.stringify(systemData.images);
-            
-            // التحقق من حجم البيانات قبل الحفظ
-            const totalSize = txData.length + defData.length + archData.length + settingsData.length + imagesData.length;
-            if (totalSize > 5 * 1024 * 1024) { // 5MB حد أقصى
-                showMessage('تحذير: حجم البيانات كبير جداً، يرجى تصفية البيانات القديمة', 'warning');
-                autoArchiveOldData();
-            }
-            
-            localStorage.setItem('sadara_tx', txData);
-            localStorage.setItem('sadara_def', defData);
-            localStorage.setItem('sadara_arch', archData);
-            localStorage.setItem('sadara_settings', settingsData);
-            localStorage.setItem('sadara_images', imagesData);
-            
-            systemData.lastSync = Date.now();
-            
-            // عرض مؤشر الحفظ
-            showSaveIndicator();
-            
-            console.log('💾 البيانات المحفوظة:', {
-                transactions: systemData.transactions.length,
-                deferred: systemData.deferred.length,
-                time: new Date().toLocaleTimeString()
-            });
-        } catch (error) {
-            console.error('❌ خطأ في حفظ البيانات:', error);
-            showMessage('حدث خطأ في حفظ البيانات', 'error');
-        }
-    }, force ? 0 : 1000); // تأخير 1 ثانية للحفظ التلقائي
-}
-
-// عرض مؤشر الحفظ
-function showSaveIndicator() {
-    const indicator = document.getElementById('saveIndicator');
-    indicator.style.display = 'block';
-    setTimeout(() => {
-        indicator.style.display = 'none';
-    }, 2000);
-}
-
-// أرشفة تلقائية للبيانات القديمة
-function autoArchiveOldData() {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    // أرشفة العمليات القديمة
-    const oldTransactions = systemData.transactions.filter(tx => {
-        const txDate = new Date(tx.date);
-        return txDate < thirtyDaysAgo;
-    });
-    
-    if (oldTransactions.length > 0) {
-        const archive = {
-            date: thirtyDaysAgo.toISOString().split('T')[0],
-            preparer: 'نظام تلقائي',
-            notes: 'أرشفة تلقائية للبيانات القديمة',
-            transactions: oldTransactions,
-            timestamp: new Date().toISOString()
-        };
-        
-        systemData.archives.push(archive);
-        systemData.transactions = systemData.transactions.filter(tx => {
-            const txDate = new Date(tx.date);
-            return txDate >= thirtyDaysAgo;
-        });
-        
-        console.log(`📦 تمت أرشفة ${oldTransactions.length} عملية قديمة`);
-    }
-}
-
-// ============================================
-// تحسينات طباعة التقارير
-// ============================================
-
-// طباعة التقرير الكامل بدون قطع
-function printCompleteReport(reportType, data, dateRange) {
-    showLoader('جاري إعداد الطباعة...');
-    
-    setTimeout(() => {
-        const printWindow = window.open('', '_blank');
-        const reportHtml = createPrintableReportHTML(reportType, data, dateRange);
-        
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html dir="rtl">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>تقرير صيدلية الصدارة</title>
-                <style>
-                    /* تحسينات الطباعة - منع القطع */
-                    body { 
-                        font-family: 'Noto Sans Arabic', sans-serif;
-                        padding: 15px;
-                        background: white;
-                        font-size: 12px;
-                        line-height: 1.3;
-                        margin: 0;
-                        max-width: 21cm;
-                    }
-                    
-                    /* تحسينات الجداول */
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-bottom: 15px;
-                        table-layout: fixed;
-                        page-break-inside: auto;
-                    }
-                    
-                    th, td {
-                        border: 1px solid #ddd;
-                        padding: 6px 4px;
-                        text-align: right;
-                        font-size: 11px;
-                        word-wrap: break-word;
-                        overflow-wrap: break-word;
-                    }
-                    
-                    th {
-                        background-color: #f8fafc;
-                        font-weight: bold;
-                        color: #0d9488;
-                    }
-                    
-                    /* منع قطع الصفوف */
-                    tr {
-                        page-break-inside: avoid;
-                        page-break-after: auto;
-                    }
-                    
-                    /* منع قطع العناوين */
-                    h1, h2, h3, h4 {
-                        page-break-after: avoid;
-                        page-break-inside: avoid;
-                    }
-                    
-                    /* تحسين البطاقات الإحصائية */
-                    .stats-grid {
-                        display: grid;
-                        grid-template-columns: repeat(4, 1fr);
-                        gap: 10px;
-                        margin-bottom: 20px;
-                        page-break-inside: avoid;
-                    }
-                    
-                    .stat-box {
-                        padding: 12px;
-                        border-radius: 6px;
-                        text-align: center;
-                        border: 1px solid #e2e8f0;
-                        background: #f8fafc;
-                        page-break-inside: avoid;
-                    }
-                    
-                    /* تحسينات الطباعة */
-                    @media print {
-                        body {
-                            padding: 10px;
-                            font-size: 11px;
-                        }
-                        
-                        @page {
-                            margin: 0.7cm;
-                            size: A4;
-                        }
-                        
-                        .page-break {
-                            page-break-before: always;
-                        }
-                        
-                        .no-print {
-                            display: none !important;
-                        }
-                        
-                        /* منع قطع المحتوى */
-                        .avoid-break {
-                            page-break-inside: avoid !important;
-                            break-inside: avoid !important;
-                        }
-                        
-                        /* تقليل المسافات */
-                        .compact {
-                            margin: 5px 0;
-                            padding: 5px;
-                        }
-                        
-                        /* تقليل حجم النصوص الطويلة */
-                        .truncate {
-                            max-width: 150px;
-                            overflow: hidden;
-                            text-overflow: ellipsis;
-                            white-space: nowrap;
-                        }
-                    }
-                    
-                    /* ترويسة التقرير */
-                    .report-header {
-                        text-align: center;
-                        margin-bottom: 25px;
-                        padding-bottom: 15px;
-                        border-bottom: 2px solid #0d9488;
-                        page-break-after: avoid;
-                    }
-                    
-                    /* تذييل التقرير */
-                    .report-footer {
-                        margin-top: 30px;
-                        padding-top: 15px;
-                        border-top: 1px solid #ddd;
-                        text-align: center;
-                        font-size: 10px;
-                        color: #666;
-                        page-break-before: avoid;
-                    }
-                    
-                    /* تحسين عرض العمليات */
-                    .transaction-row {
-                        page-break-inside: avoid;
-                        break-inside: avoid;
-                    }
-                    
-                    .transaction-row td {
-                        font-size: 10px;
-                        padding: 4px 3px;
-                    }
-                    
-                    /* ألوان لأنواع العمليات */
-                    .income { color: #166534; font-weight: bold; }
-                    .expense { color: #991b1b; font-weight: bold; }
-                    .deferred-sale { color: #166534; }
-                    .deferred-purchase { color: #991b1b; }
-                    .deferred-return-sale { color: #065f46; }
-                    .deferred-return-purchase { color: #b91c1c; }
-                </style>
-            </head>
-            <body>
-                ${reportHtml}
-                <script>
-                    // الطباعة التلقائية بعد التحميل
-                    window.onload = function() {
-                        setTimeout(function() {
-                            window.print();
-                            setTimeout(function() {
-                                window.close();
-                            }, 500);
-                        }, 500);
-                    };
-                <\/script>
-            </body>
-            </html>
-        `);
-        
-        printWindow.document.close();
-        hideLoader();
-    }, 500);
-}
-
-// إنشاء HTML للطباعة محسّن
-function createPrintableReportHTML(reportType, data, dateRange) {
-    const { startDate, endDate } = dateRange;
-    const dateRangeStr = startDate === endDate 
-        ? `التاريخ: ${formatDateArabic(startDate)}`
-        : `الفترة: ${formatDateArabic(startDate)} إلى ${formatDateArabic(endDate)}`;
-    
-    const reportName = REPORT_TYPES.find(r => r.id === reportType)?.name || 'تقرير';
-    
-    let html = `
-        <div class="report-header avoid-break">
-            <h1 style="color: #0d9488; font-size: 22px; margin: 0 0 10px 0;">صيدلية الصدارة</h1>
-            <h2 style="color: #333; font-size: 16px; margin: 0 0 15px 0;">${reportName}</h2>
-            <div style="color: #666; font-size: 13px;">
-                <div>${dateRangeStr}</div>
-                <div>تاريخ التقرير: ${new Date().toLocaleDateString('ar-EG')}</div>
-            </div>
-        </div>
-    `;
-    
-    // إضافة الإحصائيات حسب نوع التقرير
-    html += createReportStatsHTML(reportType, data);
-    
-    // إضافة الجداول حسب نوع التقرير
-    switch(reportType) {
-        case 'daily_cash':
-            html += createDailyCashTablesHTML(data);
-            break;
-        case 'deferred_full':
-            html += createDeferredTablesHTML(data);
-            break;
-        case 'combined':
-            html += createDailyCashTablesHTML(data);
-            html += '<div class="page-break"></div>';
-            html += createDeferredTablesHTML(data);
-            break;
-        case 'shortages':
-            html += createShortagesTableHTML(data);
-            break;
-        default:
-            html += createDailyCashTablesHTML(data);
-    }
-    
-    // تذييل التقرير
-    html += `
-        <div class="report-footer avoid-break">
-            <p style="margin: 5px 0;">صيدلية الصدارة - نظام إدارة اليومية V8.1</p>
-            <p style="margin: 5px 0;">مُعد التقرير: ${document.getElementById('preparerName').value || 'غير محدد'}</p>
-            <p style="margin: 5px 0;">وقت الطباعة: ${new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</p>
-        </div>
-    `;
-    
-    return html;
-}
-
-// إنشاء الإحصائيات للطباعة
-function createReportStatsHTML(reportType, data) {
-    const { totals } = data;
-    
-    let statsHTML = `
-        <div class="stats-grid avoid-break">
-            <div class="stat-box">
-                <div style="font-size: 11px; color: #475569; margin-bottom: 5px;">عدد العمليات</div>
-                <div style="font-size: 18px; font-weight: bold; color: #0d9488;">${data.transactions.length}</div>
-            </div>
-    `;
-    
-    if (reportType === 'daily_cash' || reportType === 'combined') {
-        statsHTML += `
-            <div class="stat-box">
-                <div style="font-size: 11px; color: #475569; margin-bottom: 5px;">الإيرادات</div>
-                <div style="font-size: 18px; font-weight: bold; color: #166534;">${totals.cashIn.toFixed(2)}</div>
-            </div>
-            <div class="stat-box">
-                <div style="font-size: 11px; color: #475569; margin-bottom: 5px;">المصروفات</div>
-                <div style="font-size: 18px; font-weight: bold; color: #991b1b;">${totals.cashOut.toFixed(2)}</div>
-            </div>
-            <div class="stat-box">
-                <div style="font-size: 11px; color: #475569; margin-bottom: 5px;">الصافي</div>
-                <div style="font-size: 18px; font-weight: bold; color: ${totals.netCash >= 0 ? '#166534' : '#991b1b'};">${totals.netCash.toFixed(2)}</div>
-            </div>
-        `;
-    }
-    
-    if (reportType === 'deferred_full' || reportType === 'combined') {
-        statsHTML += `
-            </div>
-            <div class="stats-grid avoid-break" style="margin-top: 15px;">
-                <div class="stat-box">
-                    <div style="font-size: 11px; color: #475569; margin-bottom: 5px;">مبيعات آجلة</div>
-                    <div style="font-size: 16px; font-weight: bold; color: #166534;">${totals.deferredSales.toFixed(2)}</div>
+        <!-- Header -->
+        <header class="pharmacy-gradient text-white shadow-lg sticky top-0 z-40">
+            <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="bg-white/20 p-1.5 rounded-lg backdrop-blur-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold">صيدلية الصدارة</h1>
+                        <p class="text-[10px] text-emerald-100 opacity-90">نظام الإدارة والرسائل</p>
+                    </div>
                 </div>
-                <div class="stat-box">
-                    <div style="font-size: 11px; color: #475569; margin-bottom: 5px;">مشتريات آجلة</div>
-                    <div style="font-size: 16px; font-weight: bold; color: #991b1b;">${totals.deferredPurchases.toFixed(2)}</div>
-                </div>
-                <div class="stat-box">
-                    <div style="font-size: 11px; color: #475569; margin-bottom: 5px;">مردود مبيعات</div>
-                    <div style="font-size: 16px; font-weight: bold; color: #065f46;">${totals.returnSales.toFixed(2)}</div>
-                </div>
-                <div class="stat-box">
-                    <div style="font-size: 11px; color: #475569; margin-bottom: 5px;">مردود مشتريات</div>
-                    <div style="font-size: 16px; font-weight: bold; color: #b91c1c;">${totals.returnPurchases.toFixed(2)}</div>
-                </div>
-        `;
-    }
-    
-    statsHTML += `</div>`;
-    return statsHTML;
-}
-
-// إنشاء جداول النقدية للطباعة
-function createDailyCashTablesHTML(data) {
-    const { transactions, summaries } = data;
-    
-    if (transactions.length === 0) {
-        return `
-            <div class="avoid-break" style="text-align: center; padding: 20px; background: #f8fafc; border-radius: 8px; margin: 15px 0;">
-                <i class="fas fa-info-circle" style="color: #6b7280; font-size: 24px; margin-bottom: 10px;"></i>
-                <div style="color: #6b7280; font-size: 14px;">لا توجد عمليات نقدية في هذه الفترة</div>
-            </div>
-        `;
-    }
-    
-    let tablesHTML = '';
-    
-    // جدول العمليات النقدية
-    tablesHTML += `
-        <div class="avoid-break">
-            <h3 style="color: #0d9488; font-size: 14px; border-bottom: 1px solid #ddd; padding-bottom: 8px; margin: 20px 0 15px 0;">
-                العمليات النقدية (${transactions.length})
-            </h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 15%;">الوقت</th>
-                        <th style="width: 20%;">النوع</th>
-                        <th style="width: 20%;">الصندوق</th>
-                        <th style="width: 35%;">البيان</th>
-                        <th style="width: 10%;">المبلغ</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-    
-    // تجميع العمليات حسب التاريخ لتحسين العرض
-    const transactionsByDate = {};
-    transactions.forEach(tx => {
-        if (!transactionsByDate[tx.date]) {
-            transactionsByDate[tx.date] = [];
-        }
-        transactionsByDate[tx.date].push(tx);
-    });
-    
-    Object.keys(transactionsByDate).sort().reverse().forEach(date => {
-        const dateTransactions = transactionsByDate[date];
-        
-        tablesHTML += `
-            <tr class="transaction-row">
-                <td colspan="5" style="background: #f1f5f9; font-weight: bold; text-align: center;">
-                    ${formatDateArabic(date)} (${dateTransactions.length} عملية)
-                </td>
-            </tr>
-        `;
-        
-        dateTransactions.forEach(tx => {
-            const typeInfo = TX_TYPES[tx.type];
-            const amountClass = typeInfo?.type === 'in' ? 'income' : 
-                               typeInfo?.type === 'out' ? 'expense' : '';
-            
-            tablesHTML += `
-                <tr class="transaction-row">
-                    <td>${tx.time || ''}</td>
-                    <td>${typeInfo?.label || tx.type}</td>
-                    <td>${tx.fund || ''}</td>
-                    <td style="max-width: 200px;">${tx.description || ''}</td>
-                    <td class="${amountClass}">${tx.amount > 0 ? tx.amount.toFixed(2) : '-'}</td>
-                </tr>
-            `;
-        });
-    });
-    
-    tablesHTML += `
-                </tbody>
-            </table>
-        </div>
-    `;
-    
-    // جدول الإجماليات حسب الصندوق
-    if (Object.keys(summaries.byFund).length > 0) {
-        tablesHTML += `
-            <div class="avoid-break" style="margin-top: 20px;">
-                <h3 style="color: #0d9488; font-size: 14px; border-bottom: 1px solid #ddd; padding-bottom: 8px; margin: 20px 0 15px 0;">
-                    إجماليات الصناديق
-                </h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 25%;">الصندوق</th>
-                            <th style="width: 25%;">الإيرادات</th>
-                            <th style="width: 25%;">المصروفات</th>
-                            <th style="width: 25%;">الصافي</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-        
-        Object.entries(summaries.byFund).forEach(([fund, amounts]) => {
-            const netAmount = amounts.in - amounts.out;
-            
-            tablesHTML += `
-                <tr>
-                    <td>${fund}</td>
-                    <td class="income">${amounts.in.toFixed(2)}</td>
-                    <td class="expense">${amounts.out.toFixed(2)}</td>
-                    <td style="color: ${netAmount >= 0 ? '#166534' : '#991b1b'}; font-weight: bold;">
-                        ${netAmount.toFixed(2)}
-                    </td>
-                </tr>
-            `;
-        });
-        
-        tablesHTML += `
-                    </tbody>
-                </table>
-            </div>
-        `;
-    }
-    
-    return tablesHTML;
-}
-
-// إنشاء جداول الآجلة للطباعة
-function createDeferredTablesHTML(data) {
-    const { deferred } = data;
-    
-    if (deferred.length === 0) {
-        return `
-            <div class="avoid-break" style="text-align: center; padding: 20px; background: #f8fafc; border-radius: 8px; margin: 15px 0;">
-                <i class="fas fa-info-circle" style="color: #6b7280; font-size: 24px; margin-bottom: 10px;"></i>
-                <div style="color: #6b7280; font-size: 14px;">لا توجد عمليات آجلة في هذه الفترة</div>
-            </div>
-        `;
-    }
-    
-    let tablesHTML = `
-        <div class="avoid-break">
-            <h3 style="color: #0d9488; font-size: 14px; border-bottom: 1px solid #ddd; padding-bottom: 8px; margin: 20px 0 15px 0;">
-                العمليات الآجلة (${deferred.length})
-            </h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 15%;">التاريخ</th>
-                        <th style="width: 20%;">النوع</th>
-                        <th style="width: 20%;">الاسم</th>
-                        <th style="width: 35%;">الوصف</th>
-                        <th style="width: 10%;">المبلغ</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-    
-    // تجميع الآجلة حسب التاريخ
-    const deferredByDate = {};
-    deferred.forEach(def => {
-        if (!deferredByDate[def.date]) {
-            deferredByDate[def.date] = [];
-        }
-        deferredByDate[def.date].push(def);
-    });
-    
-    Object.keys(deferredByDate).sort().reverse().forEach(date => {
-        const dateDeferred = deferredByDate[date];
-        
-        tablesHTML += `
-            <tr class="transaction-row">
-                <td colspan="5" style="background: #f1f5f9; font-weight: bold; text-align: center;">
-                    ${formatDateArabic(date)} (${dateDeferred.length} عملية)
-                </td>
-            </tr>
-        `;
-        
-        dateDeferred.forEach(def => {
-            const typeClass = def.type === 'def_sale' ? 'deferred-sale' :
-                            def.type === 'def_purchase' ? 'deferred-purchase' :
-                            def.type === 'def_return_sale' ? 'deferred-return-sale' :
-                            def.type === 'def_return_purchase' ? 'deferred-return-purchase' : '';
-            
-            const typeLabel = DEFERRED_TYPES[def.type]?.label || def.label;
-            
-            tablesHTML += `
-                <tr class="transaction-row">
-                    <td>${def.date}</td>
-                    <td>${typeLabel}</td>
-                    <td>${def.name || ''}</td>
-                    <td style="max-width: 200px;">
-                        ${def.description || '-'}
-                        ${def.reference ? `<br><small>مرجع: ${def.reference}</small>` : ''}
-                        ${def.percentage && def.percentage !== 100 ? `<br><small>(${def.percentage}%)</small>` : ''}
-                    </td>
-                    <td class="${typeClass}">${def.amount.toFixed(2)}</td>
-                </tr>
-            `;
-        });
-    });
-    
-    tablesHTML += `
-                </tbody>
-            </table>
-        </div>
-    `;
-    
-    return tablesHTML;
-}
-
-// إنشاء جدول النواقص للطباعة
-function createShortagesTableHTML(data) {
-    const shortages = data.transactions.filter(tx => tx.type === 'shortage');
-    
-    if (shortages.length === 0) {
-        return `
-            <div class="avoid-break" style="text-align: center; padding: 20px; background: #f8fafc; border-radius: 8px; margin: 15px 0;">
-                <i class="fas fa-check-circle" style="color: #10b981; font-size: 24px; margin-bottom: 10px;"></i>
-                <div style="color: #10b981; font-size: 14px; font-weight: bold;">لا توجد نواقص مسجلة</div>
-            </div>
-        `;
-    }
-    
-    let tableHTML = `
-        <div class="avoid-break">
-            <h3 style="color: #0d9488; font-size: 14px; border-bottom: 1px solid #ddd; padding-bottom: 8px; margin: 20px 0 15px 0;">
-                تقرير النواقص (${shortages.length})
-            </h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 20%;">التاريخ</th>
-                        <th style="width: 15%;">الوقت</th>
-                        <th style="width: 45%;">اسم الدواء الناقص</th>
-                        <th style="width: 20%;">الصندوق</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-    
-    shortages.forEach(tx => {
-        tableHTML += `
-            <tr class="transaction-row">
-                <td>${tx.date}</td>
-                <td>${tx.time || ''}</td>
-                <td style="color: #dc2626; font-weight: bold;">${tx.description}</td>
-                <td>${tx.fund || ''}</td>
-            </tr>
-        `;
-    });
-    
-    tableHTML += `
-                </tbody>
-            </table>
-        </div>
-    `;
-    
-    return tableHTML;
-}
-
-// ============================================
-// تحسينات الأداء العامة
-// ============================================
-
-// تحسين تحميل البيانات
-function loadDailyTransactions() {
-    const list = document.getElementById('txList');
-    const empty = document.getElementById('emptyState');
-    
-    if (!list) return;
-    
-    if (systemData.transactions.length === 0) {
-        list.innerHTML = '';
-        empty?.classList.remove('hidden');
-        document.getElementById('txCount').textContent = '0 عملية';
-        updateBalance(0);
-        return;
-    }
-    
-    empty?.classList.add('hidden');
-    
-    // استخدام DocumentFragment لتحسين الأداء
-    const fragment = document.createDocumentFragment();
-    const recentTxs = systemData.transactions.slice(-100).reverse(); // تحديد عدد الصفوف
-    
-    let total = 0;
-    
-    recentTxs.forEach(tx => {
-        const typeInfo = TX_TYPES[tx.type];
-        
-        if (typeInfo.type === 'in') {
-            total += tx.amount;
-        } else if (typeInfo.type === 'out') {
-            total -= tx.amount;
-        }
-        
-        const item = document.createElement('div');
-        item.className = `transaction-item ${typeInfo.bg || ''}`;
-        item.innerHTML = `
-            <div class="flex-1">
-                <div class="flex items-center gap-2 mb-1">
-                    <span class="text-large">${typeInfo.icon}</span>
-                    <span class="text-medium font-medium ${typeInfo.color}">${typeInfo.label}</span>
-                    <span class="text-small text-gray-500">${tx.time}</span>
-                </div>
-                <p class="text-gray-800 text-medium mb-1">${tx.description}</p>
-                <p class="text-small text-gray-600">${tx.fund} ${tx.author ? `| ${tx.author}` : ''} | ${tx.date}</p>
-            </div>
-            <div class="transaction-amount text-right">
-                ${tx.amount > 0 ? `<span class="font-medium text-large ${typeInfo.color}">${tx.amount.toFixed(2)}</span>` : ''}
-                <button onclick="deleteTransaction(${tx.id})" class="block mt-2 text-gray-400 hover:text-red-500 text-small">
-                    <i class="fas fa-trash mr-1"></i>حذف
+                <button onclick="showSection('settings')" class="p-2 hover:bg-white/10 rounded-full transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
                 </button>
             </div>
-        `;
-        
-        fragment.appendChild(item);
-    });
-    
-    list.innerHTML = '';
-    list.appendChild(fragment);
-    document.getElementById('txCount').textContent = `${systemData.transactions.length} عملية`;
-    updateBalance(total);
-}
+        </header>
 
-// تحسين إضافة العمليات
-function addTransaction(e) {
-    e.preventDefault();
-    
-    const type = document.getElementById('typeSelect').value;
-    const amount = parseFloat(document.getElementById('amountInput').value) || 0;
-    const description = document.getElementById('descInput').value.trim();
-    const fund = document.getElementById('fundSelect').value;
-    const author = document.getElementById('reportAuthor')?.value?.trim() || '';
-    const noAmountTypes = ['shortage', 'alert', 'note'];
-    
-    // تحقق سريع
-    if (!description) {
-        showMessage('الرجاء إدخال البيان', 'error');
-        return false;
-    }
-    
-    if (!noAmountTypes.includes(type) && amount <= 0) {
-        showMessage('الرجاء إدخال مبلغ صحيح', 'error');
-        return false;
-    }
-    
-    const currentDate = document.getElementById('currentDate').value || new Date().toISOString().split('T')[0];
-    
-    const newTransaction = {
-        id: Date.now(),
-        type: type,
-        amount: amount,
-        description: description,
-        fund: fund,
-        author: author,
-        date: currentDate,
-        time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
-        timestamp: Date.now()
-    };
-    
-    systemData.transactions.push(newTransaction);
-    saveData();
-    loadDailyTransactions();
-    
-    // إعادة تعيين النموذج
-    document.getElementById('descInput').value = '';
-    if (!noAmountTypes.includes(type)) {
-        document.getElementById('amountInput').value = '';
-    }
-    if (type === 'note') {
-        document.getElementById('reportAuthor').value = '';
-    }
-    
-    // التركيز على حقل البيان
-    setTimeout(() => {
-        document.getElementById('descInput').focus();
-    }, 100);
-    
-    showMessage('تم إضافة العملية بنجاح', 'success');
-    return false;
-}
-
-// تحسين حذف العمليات
-function deleteTransaction(id) {
-    if (!confirm('هل تريد حذف هذه العملية؟')) return;
-    
-    systemData.transactions = systemData.transactions.filter(tx => tx.id !== id);
-    saveData();
-    loadDailyTransactions();
-    showMessage('تم حذف العملية بنجاح', 'success');
-}
-
-// ============================================
-// نظام المزامنة التلقائية المحسّن
-// ============================================
-
-// مزامنة تلقائية عند تغيير علامة التبويب
-let lastActiveTab = 'daily';
-document.addEventListener('visibilitychange', function() {
-    if (!document.hidden) {
-        // تحديث البيانات عند العودة للنافذة
-        loadInitialData();
-        
-        if (lastActiveTab === 'daily') {
-            loadDailyTransactions();
-        } else if (lastActiveTab === 'deferred') {
-            loadDeferredTransactions();
-        }
-    }
-});
-
-// حفظ تلقائي عند الخروج
-window.addEventListener('beforeunload', function() {
-    saveData(true); // حفظ فوري
-});
-
-// حفظ تلقائي دوري كل 30 ثانية
-setInterval(() => {
-    if (document.visibilityState === 'visible') {
-        saveData();
-    }
-}, 30000); // 30 ثانية
-
-// ============================================
-// تحسينات واجهة المستخدم
-// ============================================
-
-// تحميل أسرع للصور
-function loadSavedImages() {
-    const container = document.getElementById('savedImages');
-    const noImagesMsg = document.getElementById('noImagesMessage');
-    
-    if (!container) return;
-    
-    container.innerHTML = '';
-    
-    if (systemData.images.length === 0) {
-        noImagesMsg?.classList.remove('hidden');
-        return;
-    }
-    
-    noImagesMsg?.classList.add('hidden');
-    
-    // تحسين تحميل الصور
-    const fragment = document.createDocumentFragment();
-    const recentImages = systemData.images.slice(-20); // عرض آخر 20 صورة فقط
-    
-    recentImages.forEach(image => {
-        const imageItem = document.createElement('div');
-        imageItem.className = 'image-item';
-        
-        const img = document.createElement('img');
-        img.src = image.data;
-        img.className = 'image-preview';
-        img.alt = image.name;
-        img.loading = 'lazy'; // تحميل كسول للصور
-        
-        const removeBtn = document.createElement('div');
-        removeBtn.className = 'image-remove';
-        removeBtn.innerHTML = '<i class="fas fa-times"></i>';
-        removeBtn.onclick = function() {
-            if (confirm('هل تريد حذف هذه الصورة؟')) {
-                deleteImage(image.id);
-            }
-        };
-        
-        imageItem.appendChild(img);
-        imageItem.appendChild(removeBtn);
-        fragment.appendChild(imageItem);
-    });
-    
-    container.appendChild(fragment);
-}
-
-// ============================================
-// تهيئة النظام المحسّنة
-// ============================================
-
-function initPage() {
-    // تعيين التاريخ الحالي
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('currentDate').value = today;
-    
-    // تحميل البيانات
-    loadInitialData();
-    
-    // تحميل الواجهة
-    setTimeout(() => {
-        loadDailyTransactions();
-        initializeImageUpload();
-        updateBalance(0);
-        
-        // إخفاء حقل كاتب التقرير
-        const authorField = document.getElementById('reportAuthorField');
-        if (authorField) authorField.style.display = 'none';
-        
-        // إضافة تأثير تحميل سلس
-        document.body.style.opacity = '0';
-        setTimeout(() => {
-            document.body.style.transition = 'opacity 0.3s ease';
-            document.body.style.opacity = '1';
-        }, 50);
-    }, 100);
-    
-    console.log('✅ النظام المحسّن جاهز V8.1');
-    
-    // بدء المزامنة التلقائية
-    startAutoSync();
-}
-
-// بدء المزامنة التلقائية
-function startAutoSync() {
-    // مزامنة كل دقيقة عند النشاط
-    setInterval(() => {
-        if (document.hasFocus()) {
-            saveData();
-        }
-    }, 60000);
-    
-    // مراقبة تغيرات البيانات
-    const observer = new MutationObserver(() => {
-        if (document.hasFocus()) {
-            saveData();
-        }
-    });
-    
-    // مراقبة التغيرات في النماذج
-    const forms = document.querySelectorAll('form, input, select, textarea');
-    forms.forEach(form => {
-        observer.observe(form, {
-            attributes: true,
-            childList: true,
-            subtree: true
-        });
-    });
-}
-
-// ============================================
-// دعم الطباعة المحسّن
-// ============================================
-
-// طباعة تقرير كامل
-function printDailyReport() {
-    const date = document.getElementById('currentDate').value || new Date().toISOString().split('T')[0];
-    const dateTransactions = systemData.transactions.filter(tx => tx.date === date);
-    const dateDeferred = systemData.deferred.filter(def => def.date === date);
-    
-    const data = {
-        transactions: dateTransactions,
-        deferred: dateDeferred,
-        images: systemData.images.filter(img => {
-            const imgDate = new Date(img.date).toISOString().split('T')[0];
-            return imgDate === date;
-        }),
-        totals: calculateTotals(dateTransactions, dateDeferred),
-        summaries: generateSummaries(dateTransactions, dateDeferred)
-    };
-    
-    printCompleteReport('combined', data, { startDate: date, endDate: date });
-}
-
-// ============================================
-// بدء النظام
-// ============================================
-
-// بدء النظام عند تحميل الصفحة
-window.addEventListener('DOMContentLoaded', initPage);
-
-// ============================================
-// وظائف مساعدة محسّنة
-// ============================================
-
-function showMessage(message, type) {
-    // استخدام رسائل أسرع
-    const messageEl = document.createElement('div');
-    messageEl.className = `fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-3 rounded-lg shadow-lg ${
-        type === 'success' ? 'bg-green-500 text-white' : 
-        type === 'error' ? 'bg-red-500 text-white' : 
-        type === 'warning' ? 'bg-yellow-500 text-white' : 
-        'bg-blue-500 text-white'
-    }`;
-    messageEl.innerHTML = `
-        <div class="flex items-center">
-            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} mr-2"></i>
-            <span>${message}</span>
+        <!-- Navigation Tabs -->
+        <div class="bg-white shadow-sm border-b border-gray-200 sticky top-[60px] z-30">
+            <div class="flex justify-around">
+                <button onclick="showSection('operations')" id="nav-operations" class="flex-1 py-3 text-sm font-bold border-b-2 border-emerald-600 text-emerald-700">العمليات والرسائل</button>
+                <button onclick="showSection('reports')" id="nav-reports" class="flex-1 py-3 text-sm font-bold border-b-2 border-transparent text-gray-500">التقارير اليومية</button>
+            </div>
         </div>
-    `;
-    
-    document.body.appendChild(messageEl);
-    
-    // إخفاء أسرع
-    setTimeout(() => {
-        messageEl.style.opacity = '0';
-        messageEl.style.transition = 'opacity 0.3s ease';
-        setTimeout(() => {
-            if (messageEl.parentNode) {
-                document.body.removeChild(messageEl);
+
+        <main class="container mx-auto px-4 py-6 max-w-lg">
+
+            <!-- ================= SECTION 1: OPERATIONS (Main) ================= -->
+            <div id="section-operations" class="space-y-5">
+                
+                <!-- Client Selection -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-sm font-bold text-gray-700">العميل</label>
+                        <button onclick="openNewClientModal()" class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded hover:bg-emerald-200 transition font-bold">+ عميل جديد</button>
+                    </div>
+                    <select id="opClientSelect" onchange="loadClientData()" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="">-- اختر العميل --</option>
+                    </select>
+                </div>
+
+                <!-- Template & Amounts -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 space-y-4">
+                    
+                    <!-- Template Selection -->
+                    <div>
+                        <label class="text-sm font-bold text-gray-700 mb-1 block">نوع العملية (قالب جاهز)</label>
+                        <select id="opTemplateSelect" onchange="handleTemplateChange()" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-emerald-500">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+
+                    <!-- Amount Input (Conditionally Shown) -->
+                    <div id="amountInputContainer" class="hidden-section bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+                        <label class="text-xs font-bold text-emerald-800 mb-1 block">المبلغ (أرقام فقط)</label>
+                        <div class="relative">
+                            <input type="number" id="opAmount" placeholder="0.00" class="w-full p-2 pl-12 border border-gray-300 rounded text-xl font-bold text-center outline-none focus:border-emerald-500 text-emerald-700" oninput="updateMessageBody()">
+                            <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs font-bold">ريال/دولار</span>
+                        </div>
+                    </div>
+
+                    <!-- Extra Statement Button -->
+                    <div>
+                        <button onclick="toggleStatement()" id="btnStatement" class="text-xs flex items-center gap-1 text-gray-500 hover:text-emerald-600 font-bold transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            إضافة بيان / ملاحظة إضافية
+                        </button>
+                        <textarea id="opStatement" rows="2" class="hidden-section w-full mt-2 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm" placeholder="اكتب التفاصيل هنا..." oninput="updateMessageBody()"></textarea>
+                    </div>
+
+                    <!-- Final Message Preview -->
+                    <div class="bg-gray-100 p-3 rounded-lg">
+                        <label class="text-xs font-bold text-gray-500 mb-1 block">نص الرسالة النهائي</label>
+                        <textarea id="finalMessage" rows="4" class="w-full bg-transparent border-none outline-none text-sm text-gray-700 resize-none" readonly></textarea>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="sendVia('whatsapp')" class="bg-[#25D366] text-white py-3 rounded-xl font-bold shadow hover:bg-green-600 transition flex justify-center items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.807-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.017-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                        واتساب (صورة)
+                    </button>
+                    <button onclick="sendVia('sms')" class="bg-gray-800 text-white py-3 rounded-xl font-bold shadow hover:bg-gray-900 transition flex justify-center items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" /><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" /></svg>
+                        رسالة نصية SMS
+                    </button>
+                </div>
+            </div>
+
+            <!-- ================= SECTION 2: REPORTS ================= -->
+            <div id="section-reports" class="hidden-section space-y-5">
+                
+                <div class="bg-white rounded-xl shadow p-4">
+                    <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">سجل عمليات اليوم</h3>
+                    
+                    <div class="flex gap-2 mb-4 overflow-x-auto pb-2">
+                        <button onclick="filterReports('all')" class="bg-emerald-600 text-white px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap">الكل</button>
+                        <button onclick="filterReports('financial')" class="bg-gray-100 text-gray-600 px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap hover:bg-emerald-50">مالي (استلام/صرف)</button>
+                        <button onclick="filterReports('notes')" class="bg-gray-100 text-gray-600 px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap hover:bg-emerald-50">ملاحظات</button>
+                    </div>
+
+                    <div class="overflow-hidden border rounded-lg">
+                        <table class="w-full text-sm text-right">
+                            <thead class="bg-gray-50 text-gray-600 font-bold">
+                                <tr>
+                                    <th class="p-3">العميل</th>
+                                    <th class="p-3">البيان</th>
+                                    <th class="p-3">المبلغ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportTableBody" class="divide-y divide-gray-100 bg-white">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800 rounded-xl p-4 text-white">
+                    <h3 class="font-bold mb-3 text-sm">تصدير التقارير (PDF)</h3>
+                    <div class="grid grid-cols-1 gap-3">
+                        <button onclick="generatePDF('summary')" class="bg-white/10 hover:bg-white/20 p-3 rounded-lg flex items-center justify-between transition">
+                            <span class="text-sm">تقرير إجمالي (الملخص اليومي)</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 011.414.586l5.414 5.414a1 1 0 01.586 1.414V19a2 2 0 01-2 2z" /></svg>
+                        </button>
+                        <button onclick="generatePDF('financial')" class="bg-white/10 hover:bg-white/20 p-3 rounded-lg flex items-center justify-between transition">
+                            <span class="text-sm">تقرير مالي (مقبوضات ومدفوعات)</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= SECTION 3: SETTINGS ================= -->
+            <div id="section-settings" class="hidden-section space-y-6">
+                
+                <!-- Manage Clients -->
+                <div class="bg-white rounded-xl shadow p-4 border border-gray-200">
+                    <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-600" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" /></svg>
+                        إدارة العملاء
+                    </h3>
+                    <div id="clientsList" class="max-h-40 overflow-y-auto space-y-2 mb-3">
+                        <!-- Loaded by JS -->
+                    </div>
+                    <button onclick="openNewClientModal()" class="w-full bg-gray-100 text-gray-600 py-2 rounded-lg text-sm font-bold hover:bg-gray-200 transition">إضافة عميل جديد</button>
+                </div>
+
+                <!-- Manage Templates -->
+                <div class="bg-white rounded-xl shadow p-4 border border-gray-200">
+                    <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-600" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 3a1 1 0 00-1.447-.894L8.763 6H5a3 3 0 000 6h.28l1.771 5.316A1 1 0 008 18h1a1 1 0 001-1v-4.382l6.553 3.276A1 1 0 0018 15V3z" clip-rule="evenodd" /></svg>
+                        القوالب والنصوص الجاهزة
+                    </h3>
+                    
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" id="newTemplateText" placeholder="مثال: عليك سداد مبلغ" class="flex-1 bg-gray-50 border border-gray-200 rounded p-2 text-sm outline-none">
+                        <div class="flex items-center gap-1 bg-gray-50 px-2 rounded border border-gray-200">
+                            <input type="checkbox" id="newTemplateIsFinancial" class="h-4 w-4 text-emerald-600">
+                            <label for="newTemplateIsFinancial" class="text-xs">مالي؟</label>
+                        </div>
+                        <button onclick="addTemplate()" class="bg-emerald-600 text-white px-3 rounded text-sm font-bold">إضافة</button>
+                    </div>
+
+                    <div id="templatesList" class="max-h-40 overflow-y-auto space-y-2">
+                        <!-- Loaded by JS -->
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <button onclick="showSection('operations')" class="text-gray-500 text-sm font-bold underline">عودة للرئيسية</button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- New Client Modal -->
+    <div id="newClientModal" class="hidden-section fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm">
+            <h3 class="font-bold text-lg mb-4 text-gray-800">إضافة عميل جديد</h3>
+            <div class="space-y-3">
+                <input type="text" id="modalClientName" placeholder="اسم العميل" class="w-full border rounded-lg p-3 outline-none focus:border-emerald-500">
+                <input type="tel" id="modalClientPhone" placeholder="رقم الهاتف (واتساب)" class="w-full border rounded-lg p-3 outline-none focus:border-emerald-500 text-left" dir="ltr">
+                <div class="flex gap-3 pt-2">
+                    <button onclick="saveNewClientFromModal()" class="flex-1 bg-emerald-600 text-white py-2 rounded-lg font-bold">حفظ</button>
+                    <button onclick="document.getElementById('newClientModal').classList.add('hidden-section')" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-bold">إلغاء</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Report Generator Container (For PDF) -->
+    <div id="pdfContainer" class="fixed top-0 left-0 bg-white p-8 w-[210mm] hidden-section z-[200]">
+        <div class="text-center mb-6 border-b-2 border-emerald-600 pb-4">
+            <h1 class="text-3xl font-bold text-gray-800">صيدلية الصدارة</h1>
+            <p class="text-gray-500">تقرير العمليات اليومية</p>
+            <p id="pdfDate" class="text-sm mt-1"></p>
+        </div>
+        <div id="pdfContent">
+            <!-- Dynamic Content -->
+        </div>
+        <div class="mt-8 text-center text-xs text-gray-400 border-t pt-4">
+            تم استخراج التقرير آلياً من نظام صيدلية الصدارة
+        </div>
+    </div>
+
+    <script>
+        // --- Data Management ---
+        const welcomeText = `اهلا بكم بخدمة الرسائل النصية من صيدلية الصدارة\n\nسيتم ارسال ما لك وما عليك من خدمة الرسائل النصية، علما ان الرسائل النصية المرسلة من اليوم لا تتدخل باي حركة حساب سابقة.\n\nمع تمنياتنا لكم بدوام الصحة\nصيدلية الصدارة`;
+
+        let appData = {
+            clients: JSON.parse(localStorage.getItem('sadara_clients')) || [],
+            templates: JSON.parse(localStorage.getItem('sadara_templates')) || [
+                { id: 1, text: "استلام مبلغ", isFinancial: true },
+                { id: 2, text: "صرف مبلغ", isFinancial: true },
+                { id: 3, text: "ملاحظة عامة", isFinancial: false },
+                { id: 4, text: "رسالة ترحيبية", isFinancial: false }
+            ],
+            logs: JSON.parse(localStorage.getItem('sadara_logs')) || [] // {date, client, type, amount, notes}
+        };
+
+        function saveData() {
+            localStorage.setItem('sadara_clients', JSON.stringify(appData.clients));
+            localStorage.setItem('sadara_templates', JSON.stringify(appData.templates));
+            localStorage.setItem('sadara_logs', JSON.stringify(appData.logs));
+        }
+
+        // --- App Logic ---
+
+        function simulateLogin() {
+            const btn = document.querySelector('#loginScreen button');
+            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white inline ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> جاري المزامنة...`;
+            btn.disabled = true;
+
+            setTimeout(() => {
+                document.getElementById('loginScreen').classList.add('hidden-section');
+                document.getElementById('appLayout').classList.remove('hidden-section');
+                initApp();
+            }, 1500);
+        }
+
+        function initApp() {
+            renderClientsSelect();
+            renderTemplatesSelect();
+            renderSettingsLists();
+            renderReportTable();
+        }
+
+        function showSection(sectionId) {
+            ['operations', 'reports', 'settings'].forEach(s => {
+                document.getElementById(`section-${s}`).classList.add('hidden-section');
+                const nav = document.getElementById(`nav-${s}`);
+                if(nav) {
+                    nav.classList.remove('border-emerald-600', 'text-emerald-700');
+                    nav.classList.add('border-transparent', 'text-gray-500');
+                }
+            });
+
+            document.getElementById(`section-${sectionId}`).classList.remove('hidden-section');
+            const activeNav = document.getElementById(`nav-${sectionId}`);
+            if(activeNav) {
+                activeNav.classList.remove('border-transparent', 'text-gray-500');
+                activeNav.classList.add('border-emerald-600', 'text-emerald-700');
             }
-        }, 300);
-    }, 3000);
-}
+        }
 
-function showLoader(text = 'جاري المعالجة...') {
-    const loader = document.getElementById('loader');
-    const loaderText = document.getElementById('loaderText');
-    
-    if (loader && loaderText) {
-        loaderText.textContent = text;
-        loader.classList.add('active');
-    }
-}
+        // --- Operations Section Logic ---
 
-function hideLoader() {
-    const loader = document.getElementById('loader');
-    if (loader) {
-        loader.classList.remove('active');
-    }
-}
+        function renderClientsSelect() {
+            const select = document.getElementById('opClientSelect');
+            select.innerHTML = '<option value="">-- اختر العميل --</option>';
+            appData.clients.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.text = c.name;
+                select.appendChild(opt);
+            });
+        }
 
-// بقية الوظائف كما هي مع تحسينات الأداء...
-</script>
+        function renderTemplatesSelect() {
+            const select = document.getElementById('opTemplateSelect');
+            select.innerHTML = '<option value="">-- اختر نوع العملية --</option>';
+            
+            // Add Welcome option specifically
+            const welcomeOpt = document.createElement('option');
+            welcomeOpt.value = "welcome";
+            welcomeOpt.text = "👋 رسالة ترحيبية (عميل جديد)";
+            select.appendChild(welcomeOpt);
+
+            appData.templates.forEach(t => {
+                if(t.text !== "رسالة ترحيبية") { // Skip duplicate if exists
+                    const opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.text = t.text;
+                    opt.dataset.financial = t.isFinancial;
+                    select.appendChild(opt);
+                }
+            });
+        }
+
+        function handleTemplateChange() {
+            const select = document.getElementById('opTemplateSelect');
+            const selectedOpt = select.options[select.selectedIndex];
+            const amountContainer = document.getElementById('amountInputContainer');
+            const finalMsg = document.getElementById('finalMessage');
+
+            // Reset Fields
+            document.getElementById('opAmount').value = '';
+            
+            if (select.value === 'welcome') {
+                amountContainer.classList.add('hidden-section');
+                finalMsg.value = welcomeText;
+            } else {
+                if (selectedOpt.dataset.financial === 'true') {
+                    amountContainer.classList.remove('hidden-section');
+                    // Focus on amount
+                    setTimeout(() => document.getElementById('opAmount').focus(), 100);
+                } else {
+                    amountContainer.classList.add('hidden-section');
+                }
+                updateMessageBody();
+            }
+        }
+
+        function toggleStatement() {
+            const area = document.getElementById('opStatement');
+            if (area.classList.contains('hidden-section')) {
+                area.classList.remove('hidden-section');
+                area.focus();
+            } else {
+                area.classList.add('hidden-section');
+                area.value = '';
+                updateMessageBody();
+            }
+        }
+
+        function updateMessageBody() {
+            const clientSelect = document.getElementById('opClientSelect');
+            const clientName = clientSelect.selectedIndex > 0 ? clientSelect.options[clientSelect.selectedIndex].text : "العميل";
+            
+            const templateSelect = document.getElementById('opTemplateSelect');
+            if(templateSelect.value === 'welcome') return; // Fixed text
+
+            const templateText = templateSelect.selectedIndex > 0 ? templateSelect.options[templateSelect.selectedIndex].text : "";
+            const amount = document.getElementById('opAmount').value;
+            const statement = document.getElementById('opStatement').value;
+            
+            let msg = `مرحباً ${clientName}،\n`;
+            
+            if(templateText) {
+                msg += `${templateText}`;
+                if(amount) msg += `: ${amount} (ريال/دولار)`;
+                msg += `.\n`;
+            }
+
+            if(statement) {
+                msg += `ملاحظة: ${statement}\n`;
+            }
+
+            msg += `\nصيدلية الصدارة`;
+            document.getElementById('finalMessage').value = msg;
+        }
+
+        function loadClientData() {
+            // Optional: Show client balance or last msg
+            updateMessageBody();
+        }
+
+        function sendVia(method) {
+            const clientSelect = document.getElementById('opClientSelect');
+            const msg = document.getElementById('finalMessage').value;
+            
+            if(!clientSelect.value) { alert("اختر العميل أولاً"); return; }
+            if(!msg.trim()) { alert("لا يوجد نص للرسالة"); return; }
+
+            const client = appData.clients.find(c => c.id == clientSelect.value);
+            const isFinancial = !document.getElementById('amountInputContainer').classList.contains('hidden-section');
+            const amount = document.getElementById('opAmount').value || 0;
+
+            // Log Transaction
+            const logEntry = {
+                date: new Date().toLocaleString('ar-SA'),
+                timestamp: Date.now(),
+                client: client.name,
+                type: isFinancial ? 'financial' : 'note',
+                details: document.getElementById('opTemplateSelect').options[document.getElementById('opTemplateSelect').selectedIndex].text,
+                amount: isFinancial ? amount : '-',
+                fullText: msg
+            };
+            appData.logs.unshift(logEntry);
+            saveData();
+            renderReportTable(); // Refresh reports
+
+            // Send
+            if (method === 'whatsapp') {
+                const url = `https://wa.me/${client.phone}?text=${encodeURIComponent(msg)}`;
+                window.open(url, '_blank');
+            } else {
+                // SMS
+                 const ua = navigator.userAgent.toLowerCase();
+                const isiOS = /iphone|ipad|ipod/.test(ua);
+                let smsLink = isiOS ? `sms:${client.phone}&body=${encodeURIComponent(msg)}` : `sms:${client.phone}?body=${encodeURIComponent(msg)}`;
+                window.location.href = smsLink;
+            }
+
+            // Reset
+            document.getElementById('opAmount').value = '';
+            document.getElementById('opStatement').value = '';
+            document.getElementById('opStatement').classList.add('hidden-section');
+            alert('تم تسجيل العملية بنجاح ✅');
+        }
+
+        // --- Settings Section Logic ---
+
+        function renderSettingsLists() {
+            // Clients List
+            const cList = document.getElementById('clientsList');
+            cList.innerHTML = '';
+            appData.clients.forEach((c, idx) => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-gray-50 p-2 rounded border";
+                div.innerHTML = `
+                    <div>
+                        <div class="font-bold text-sm text-gray-800">${c.name}</div>
+                        <div class="text-xs text-gray-500">${c.phone}</div>
+                    </div>
+                    <button onclick="deleteClient(${idx})" class="text-red-500 text-xs">حذف</button>
+                `;
+                cList.appendChild(div);
+            });
+
+            // Templates List
+            const tList = document.getElementById('templatesList');
+            tList.innerHTML = '';
+            appData.templates.forEach((t, idx) => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-gray-50 p-2 rounded border";
+                div.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full ${t.isFinancial ? 'bg-green-500' : 'bg-gray-400'}"></span>
+                        <span class="text-sm text-gray-700">${t.text}</span>
+                    </div>
+                    <button onclick="deleteTemplate(${idx})" class="text-red-500 text-xs">حذف</button>
+                `;
+                tList.appendChild(div);
+            });
+        }
+
+        function openNewClientModal() {
+            document.getElementById('newClientModal').classList.remove('hidden-section');
+            document.getElementById('modalClientName').value = '';
+            document.getElementById('modalClientPhone').value = '';
+        }
+
+        function saveNewClientFromModal() {
+            const name = document.getElementById('modalClientName').value;
+            const phone = document.getElementById('modalClientPhone').value;
+
+            if(!name || !phone) { alert("أدخل البيانات كاملة"); return; }
+
+            const newClient = { id: Date.now(), name, phone };
+            appData.clients.push(newClient);
+            saveData();
+            
+            renderClientsSelect();
+            renderSettingsLists();
+            
+            document.getElementById('newClientModal').classList.add('hidden-section');
+            
+            // Auto-Select and Set Welcome Message
+            const select = document.getElementById('opClientSelect');
+            select.value = newClient.id;
+            
+            const tempSelect = document.getElementById('opTemplateSelect');
+            tempSelect.value = "welcome";
+            handleTemplateChange();
+
+            alert('تم حفظ العميل! وظهرت الرسالة الترحيبية تلقائياً.');
+        }
+
+        function deleteClient(idx) {
+            if(confirm('حذف هذا العميل؟')) {
+                appData.clients.splice(idx, 1);
+                saveData();
+                renderSettingsLists();
+                renderClientsSelect();
+            }
+        }
+
+        function addTemplate() {
+            const text = document.getElementById('newTemplateText').value;
+            const isFin = document.getElementById('newTemplateIsFinancial').checked;
+            if(!text) return;
+
+            appData.templates.push({ id: Date.now(), text, isFinancial: isFin });
+            saveData();
+            document.getElementById('newTemplateText').value = '';
+            renderSettingsLists();
+            renderTemplatesSelect();
+        }
+
+        function deleteTemplate(idx) {
+             if(confirm('حذف هذا القالب؟')) {
+                appData.templates.splice(idx, 1);
+                saveData();
+                renderSettingsLists();
+                renderTemplatesSelect();
+             }
+        }
+
+        // --- Reports Section Logic ---
+
+        function renderReportTable(filter = 'all') {
+            const tbody = document.getElementById('reportTableBody');
+            tbody.innerHTML = '';
+            
+            const today = new Date().toLocaleDateString('ar-SA'); // Simple filtering for "Daily"
+            // For demo, we show all logs. In real app, filter by date.
+            
+            const filteredLogs = appData.logs.filter(l => {
+                if(filter === 'all') return true;
+                if(filter === 'financial') return l.type === 'financial';
+                if(filter === 'notes') return l.type === 'note';
+                return true;
+            });
+
+            if(filteredLogs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-400">لا توجد بيانات</td></tr>';
+                return;
+            }
+
+            filteredLogs.forEach(log => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3 border-b text-gray-800">${log.client}</td>
+                    <td class="p-3 border-b text-gray-600">${log.details}</td>
+                    <td class="p-3 border-b font-bold ${log.type === 'financial' ? 'text-emerald-600' : 'text-gray-400'}">${log.amount}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterReports(type) {
+            renderReportTable(type);
+        }
+
+        // --- PDF Generation Logic ---
+        function generatePDF(type) {
+            const container = document.getElementById('pdfContent');
+            const today = new Date().toLocaleDateString('ar-SA');
+            document.getElementById('pdfDate').innerText = `تاريخ التقرير: ${today}`;
+            
+            let html = '';
+            
+            // Generate Table HTML based on Type
+            let logsToPrint = appData.logs;
+            let title = "التقرير اليومي الشامل";
+
+            if(type === 'financial') {
+                logsToPrint = appData.logs.filter(l => l.type === 'financial');
+                title = "التقرير المالي (مقبوضات/مدفوعات)";
+            }
+
+            html += `<h2 class="text-xl font-bold mb-4 border-r-4 border-emerald-500 pr-2">${title}</h2>`;
+            
+            html += `<table class="w-full text-right border-collapse border border-gray-300">`;
+            html += `<thead class="bg-gray-100"><tr><th class="border p-2">الوقت</th><th class="border p-2">العميل</th><th class="border p-2">العملية</th><th class="border p-2">المبلغ</th></tr></thead><tbody>`;
+            
+            let totalAmount = 0;
+
+            logsToPrint.forEach(l => {
+                html += `<tr>
+                    <td class="border p-2 text-sm">${l.date.split(',')[1] || l.date}</td>
+                    <td class="border p-2 font-bold">${l.client}</td>
+                    <td class="border p-2">${l.details}</td>
+                    <td class="border p-2">${l.amount}</td>
+                </tr>`;
+                if(l.type === 'financial') totalAmount += parseFloat(l.amount) || 0;
+            });
+
+            html += `</tbody></table>`;
+
+            if(type !== 'notes') {
+                html += `<div class="mt-4 text-left font-bold text-lg">الإجمالي: ${totalAmount.toFixed(2)}</div>`;
+            }
+
+            container.innerHTML = html;
+
+            // Show PDF Container
+            const element = document.getElementById('pdfContainer');
+            element.classList.remove('hidden-section');
+
+            // Use html2canvas + jsPDF
+            html2canvas(element, { scale: 2 }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const imgProps = pdf.getImageProperties(imgData);
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save(`تقرير_${type}_${Date.now()}.pdf`);
+                
+                element.classList.add('hidden-section');
+            });
+        }
+
+    </script>
 </body>
 </html>
+
